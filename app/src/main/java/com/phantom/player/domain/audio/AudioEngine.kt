@@ -146,7 +146,6 @@ class AudioEngine @Inject constructor(
         _currentSong.value?.let { song ->
             val intent = Intent(context, PlaybackService::class.java)
             context.startService(intent)
-            // Service will handle notification update via its own state
         }
     }
 }
