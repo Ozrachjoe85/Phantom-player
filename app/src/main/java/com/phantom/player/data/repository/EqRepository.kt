@@ -6,8 +6,6 @@ import com.phantom.player.data.local.database.entities.EqPreset
 import com.phantom.player.domain.audio.EqualizerProcessor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -54,7 +52,7 @@ class EqRepository @Inject constructor(
         eqPresetDao.getPresetById(presetId)
     
     suspend fun savePreset(name: String, bands: List<EqBand>): Long {
-        val bandsJson = Json.encodeToString(bands)
+        val bandsJson = bands.toString() // Simple string representation for now
         val preset = EqPreset(name = name, bands = bandsJson, isCustom = true)
         return eqPresetDao.insertPreset(preset)
     }
