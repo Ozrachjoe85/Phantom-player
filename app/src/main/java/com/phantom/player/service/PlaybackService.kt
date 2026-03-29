@@ -9,12 +9,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.phantom.player.MainActivity
 import com.phantom.player.R
-import com.phantom.player.data.local.database.entities.Song
 import com.phantom.player.domain.audio.AudioEngine
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
@@ -27,7 +25,6 @@ class PlaybackService : MediaSessionService() {
     lateinit var audioEngine: AudioEngine
     
     private var mediaSession: MediaSession? = null
-    private var currentSong: Song? = null
     
     companion object {
         const val NOTIFICATION_ID = 1001
@@ -59,20 +56,31 @@ class PlaybackService : MediaSessionService() {
             ACTION_PREVIOUS -> audioEngine.skipToPrevious()
             ACTION_STOP -> {
                 audioEngine.stop()
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
+            }
+            "UPDATE_NOTIFICATION" -> {
+                val title = intent.getStringExtra("song_title") ?: "Unknown"
+                val artist = intent.getStringExtra("song_artist") ?: "Unknown Artist"
+                val album = intent.getStringExtra("song_album") ?: "Unknown Album"
+                val albumArtPath = intent.getStringExtra("album_art_path")
+                val isPlaying = intent.getBooleanExtra("is_playing", false)
+                
+                val notification = createNotification(title, artist, album, albumArtPath, isPlaying)
+                startForeground(NOTIFICATION_ID, notification)
             }
         }
         return START_STICKY
     }
     
-    fun updateNotification(song: Song, isPlaying: Boolean) {
-        currentSong = song
-        val notification = createNotification(song, isPlaying)
-        startForeground(NOTIFICATION_ID, notification)
-    }
-    
-    private fun createNotification(song: Song, isPlaying: Boolean): Notification {
-        val albumArt = loadAlbumArt(song.albumArtPath)
+    private fun createNotification(
+        title: String,
+        artist: String,
+        album: String,
+        albumArtPath: String?,
+        isPlaying: Boolean
+    ): Notification {
+        val albumArt = loadAlbumArt(albumArtPath)
         
         val contentIntent = PendingIntent.getActivity(
             this,
@@ -119,9 +127,9 @@ class PlaybackService : MediaSessionService() {
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(song.title)
-            .setContentText(song.artist)
-            .setSubText(song.album)
+            .setContentTitle(title)
+            .setContentText(artist)
+            .setSubText(album)
             .setLargeIcon(albumArt)
             .setContentIntent(contentIntent)
             .setDeleteIntent(stopIntent)
@@ -196,7 +204,6 @@ class PlaybackService : MediaSessionService() {
     override fun onDestroy() {
         mediaSession?.release()
         mediaSession = null
-        audioEngine.release()
         super.onDestroy()
     }
 }
