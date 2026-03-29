@@ -17,7 +17,7 @@ val PhantomMagenta = Color(0xFFD946EF)     // Magenta city lights
 // Surface colors
 val SurfaceDark = Color(0xFF121218)
 val SurfaceVariantDark = Color(0xFF1E1E28)
-val SurfaceGlass = Color(0x991A1A24)       // Glass panel overlay
+val SurfaceGlass = Color(0x991A1A24)       // Glass panel with transparency
 
 // Light theme (minimal - app is dark-focused)
 val PhantomLightGray = Color(0xFFF5F5F5)
