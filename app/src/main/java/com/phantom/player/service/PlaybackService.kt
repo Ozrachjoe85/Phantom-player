@@ -171,4 +171,64 @@ class PlaybackService : MediaSessionService() {
             .build()
     }
     
-    private fun loadAlbumArt(artPath: String?): Bitmap?
+    private fun loadAlbumArt(artPath: String?): Bitmap? {
+        return try {
+            artPath?.let { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    BitmapFactory.decodeFile(path)
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Playback",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Media playback controls"
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
+            
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
+    
+    override fun onDestroy() {
+        mediaSession?.release()
+        mediaSession = null
+        audioEngine.release()
+        super.onDestroy()
+    }
+    
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onPlay(session: MediaSession) {
+            audioEngine.play()
+        }
+        
+        override fun onPause(session: MediaSession) {
+            audioEngine.pause()
+        }
+        
+        override fun onStop(session: MediaSession) {
+            audioEngine.stop()
+        }
+        
+        override fun onSkipToNext(session: MediaSession) {
+            audioEngine.skipToNext()
+        }
+        
+        override fun onSkipToPrevious(session: MediaSession) {
+            audioEngine.skipToPrevious()
+        }
+    }
+}
