@@ -8,9 +8,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -46,9 +44,7 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         createNotificationChannel()
         
-        mediaSession = MediaSession.Builder(this, audioEngine.player)
-            .setCallback(MediaSessionCallback())
-            .build()
+        mediaSession = MediaSession.Builder(this, audioEngine.player).build()
     }
     
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -78,7 +74,6 @@ class PlaybackService : MediaSessionService() {
     private fun createNotification(song: Song, isPlaying: Boolean): Notification {
         val albumArt = loadAlbumArt(song.albumArtPath)
         
-        // Intent to open app
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -86,7 +81,6 @@ class PlaybackService : MediaSessionService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Media actions
         val playPauseIntent = PendingIntent.getService(
             this,
             0,
@@ -123,7 +117,6 @@ class PlaybackService : MediaSessionService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Build notification
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(song.title)
@@ -137,7 +130,6 @@ class PlaybackService : MediaSessionService() {
             .setShowWhen(false)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-            // Compact view actions (3 buttons)
             .addAction(
                 R.drawable.ic_previous,
                 "Previous",
@@ -153,13 +145,11 @@ class PlaybackService : MediaSessionService() {
                 "Next",
                 nextIntent
             )
-            // Expanded view additional actions
             .addAction(
                 R.drawable.ic_close,
                 "Stop",
                 stopIntent
             )
-            // Media style
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession?.sessionCompatToken)
@@ -167,7 +157,7 @@ class PlaybackService : MediaSessionService() {
                     .setShowCancelButton(true)
                     .setCancelButtonIntent(stopIntent)
             )
-            .setColor(0x00E5FF) // PhantomCyan
+            .setColor(0x00E5FF)
             .build()
     }
     
@@ -208,27 +198,5 @@ class PlaybackService : MediaSessionService() {
         mediaSession = null
         audioEngine.release()
         super.onDestroy()
-    }
-    
-    private inner class MediaSessionCallback : MediaSession.Callback {
-        override fun onPlay(session: MediaSession) {
-            audioEngine.play()
-        }
-        
-        override fun onPause(session: MediaSession) {
-            audioEngine.pause()
-        }
-        
-        override fun onStop(session: MediaSession) {
-            audioEngine.stop()
-        }
-        
-        override fun onSkipToNext(session: MediaSession) {
-            audioEngine.skipToNext()
-        }
-        
-        override fun onSkipToPrevious(session: MediaSession) {
-            audioEngine.skipToPrevious()
-        }
     }
 }
