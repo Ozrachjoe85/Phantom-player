@@ -1,10 +1,12 @@
 package com.phantom.player.domain.audio
 
 import android.content.Context
+import android.content.Intent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.phantom.player.data.local.database.entities.Song
+import com.phantom.player.service.PlaybackService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +37,7 @@ class AudioEngine @Inject constructor(
         _player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
+                updateNotification()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -43,7 +46,7 @@ class AudioEngine @Inject constructor(
                         _duration.value = _player.duration
                     }
                     Player.STATE_ENDED -> {
-                        // Handle track end
+                        skipToNext()
                     }
                 }
             }
@@ -56,19 +59,24 @@ class AudioEngine @Inject constructor(
         _player.setMediaItem(mediaItem)
         _player.prepare()
         _player.play()
+        startService()
+        updateNotification()
     }
 
     fun play() {
         _player.play()
+        updateNotification()
     }
 
     fun pause() {
         _player.pause()
+        updateNotification()
     }
 
     fun stop() {
         _player.stop()
         _currentSong.value = null
+        stopService()
     }
 
     fun seekTo(positionMs: Long) {
@@ -77,10 +85,12 @@ class AudioEngine @Inject constructor(
 
     fun skipToNext() {
         _player.seekToNext()
+        updateNotification()
     }
 
     fun skipToPrevious() {
         _player.seekToPrevious()
+        updateNotification()
     }
 
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
@@ -92,6 +102,8 @@ class AudioEngine @Inject constructor(
         if (songs.isNotEmpty()) {
             _currentSong.value = songs[startIndex]
         }
+        startService()
+        updateNotification()
     }
 
     fun getCurrentPosition(): Long {
@@ -104,6 +116,7 @@ class AudioEngine @Inject constructor(
 
     fun release() {
         _player.release()
+        stopService()
     }
 
     fun setRepeatMode(repeatMode: Int) {
@@ -112,5 +125,28 @@ class AudioEngine @Inject constructor(
 
     fun setShuffleMode(enabled: Boolean) {
         _player.shuffleModeEnabled = enabled
+    }
+    
+    fun getAudioSessionId(): Int {
+        return _player.audioSessionId
+    }
+    
+    private fun startService() {
+        val intent = Intent(context, PlaybackService::class.java)
+        context.startForegroundService(intent)
+    }
+    
+    private fun stopService() {
+        val intent = Intent(context, PlaybackService::class.java)
+        intent.action = PlaybackService.ACTION_STOP
+        context.startService(intent)
+    }
+    
+    private fun updateNotification() {
+        _currentSong.value?.let { song ->
+            val intent = Intent(context, PlaybackService::class.java)
+            context.startService(intent)
+            // Service will handle notification update via its own state
+        }
     }
 }
