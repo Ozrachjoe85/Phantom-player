@@ -49,7 +49,13 @@ private val DarkColorScheme = darkColorScheme(
     
     inverseSurface = PhantomWhite,
     inverseOnSurface = PhantomBlack,
-    inversePrimary = PhantomBlue
+    inversePrimary = PhantomBlue,
+    
+    // Surface tints for glass effect
+    surfaceTint = PhantomCyan,
+    
+    // Scrim for overlays
+    scrim = PhantomBlack.copy(alpha = 0.8f)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -97,7 +103,9 @@ fun PhantomPlayerTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
     }
 
