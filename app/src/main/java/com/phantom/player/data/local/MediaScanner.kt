@@ -1,12 +1,14 @@
 package com.phantom.player.data.local
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import com.phantom.player.data.local.database.entities.Song
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -64,13 +66,16 @@ class MediaScanner @Inject constructor(
                 val duration = it.getLong(durationColumn)
                 val filePath = it.getString(dataColumn) ?: continue
                 val albumId = it.getLong(albumIdColumn)
-                val dateAdded = it.getLong(dateAddedColumn) * 1000 // Convert to milliseconds
+                val dateAdded = it.getLong(dateAddedColumn) * 1000
                 val year = it.getInt(yearColumn)
                 val track = it.getInt(trackColumn)
                 
-                // Get album art URI
-                val albumArtUri = Uri.parse("content://media/external/audio/albumart")
-                val albumArtPath = Uri.withAppendedPath(albumArtUri, albumId.toString()).toString()
+                // Extract embedded album art from file
+                val albumArtPath = extractAlbumArt(filePath) ?: run {
+                    // Fallback to MediaStore album art
+                    val albumArtUri = Uri.parse("content://media/external/audio/albumart")
+                    Uri.withAppendedPath(albumArtUri, albumId.toString()).toString()
+                }
                 
                 val song = Song(
                     id = generateSongId(filePath),
@@ -90,6 +95,32 @@ class MediaScanner @Inject constructor(
         }
         
         songs
+    }
+    
+    private fun extractAlbumArt(filePath: String): String? {
+        return try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(filePath)
+            val art = retriever.embeddedPicture
+            retriever.release()
+            
+            if (art != null) {
+                // Save album art to cache directory
+                val cacheDir = File(context.cacheDir, "album_art")
+                if (!cacheDir.exists()) {
+                    cacheDir.mkdirs()
+                }
+                
+                val artFile = File(cacheDir, "${generateSongId(filePath)}.jpg")
+                artFile.writeBytes(art)
+                artFile.absolutePath
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
     
     private fun generateSongId(filePath: String): String {
