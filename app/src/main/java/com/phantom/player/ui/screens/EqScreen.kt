@@ -7,17 +7,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.phantom.player.ui.viewmodel.EqViewModel
+import com.phantom.player.ui.viewmodel.PlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EqScreen(
-    viewModel: EqViewModel = hiltViewModel()
+    eqViewModel: EqViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
-    val bands by viewModel.bands.collectAsState()
-    val isEnabled by viewModel.isEnabled.collectAsState()
+    val bands by eqViewModel.bands.collectAsState()
+    val isEnabled by eqViewModel.isEnabled.collectAsState()
+    
+    // Initialize EQ with audio session ID from player
+    LaunchedEffect(Unit) {
+        // Use audio session ID 0 for now (system output)
+        eqViewModel.initialize(0)
+    }
     
     Scaffold(
         topBar = {
@@ -26,7 +35,7 @@ fun EqScreen(
                 actions = {
                     Switch(
                         checked = isEnabled,
-                        onCheckedChange = { viewModel.setEnabled(it) }
+                        onCheckedChange = { eqViewModel.setEnabled(it) }
                     )
                 }
             )
@@ -38,9 +47,8 @@ fun EqScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Reset Button
             OutlinedButton(
-                onClick = { viewModel.resetAllBands() },
+                onClick = { eqViewModel.resetAllBands() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Reset All Bands")
@@ -48,7 +56,6 @@ fun EqScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // EQ Bands
             if (bands.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -59,7 +66,7 @@ fun EqScreen(
                             frequency = band.frequency,
                             value = band.value,
                             onValueChange = { newValue ->
-                                viewModel.setBandValue(index, newValue)
+                                eqViewModel.setBandValue(index, newValue)
                             }
                         )
                     }
@@ -69,11 +76,17 @@ fun EqScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Equalizer not initialized",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Initializing equalizer...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
