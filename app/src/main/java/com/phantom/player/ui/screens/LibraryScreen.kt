@@ -118,7 +118,7 @@ fun LibraryScreen(
                                 playerViewModel.play(song)
                             }
                         )
-                        HorizontalDivider()
+                        Divider()
                     }
                 }
             }
