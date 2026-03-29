@@ -1,0 +1,66 @@
+package com.phantom.player.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.phantom.player.ui.theme.*
+
+@Composable
+fun GlassPanel(
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 12.dp,
+    glowColor: Color = PhantomCyan,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        SurfaceGlass.copy(alpha = 0.3f),
+                        SurfaceGlass.copy(alpha = 0.2f)
+                    )
+                )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        glowColor.copy(alpha = 0.6f),
+                        PhantomPurple.copy(alpha = 0.4f),
+                        PhantomPink.copy(alpha = 0.3f)
+                    )
+                ),
+                shape = RoundedCornerShape(cornerRadius)
+            )
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun NeonGlow(
+    modifier: Modifier = Modifier,
+    color: Color = PhantomCyan,
+    glowRadius: Dp = 20.dp,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .blur(glowRadius)
+            .background(color.copy(alpha = 0.3f))
+    )
+    Box(modifier = modifier) {
+        content()
+    }
+}
