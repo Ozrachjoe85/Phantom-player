@@ -1,0 +1,97 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Spectral DJ figure - simplified from your image -->
+    <group android:translateX="54" android:translateY="54">
+        
+        <!-- Outer energy glow -->
+        <path
+            android:pathData="M0,-30 Q-15,-25 -20,-15 L-25,0 Q-20,15 -10,25 L0,30 L10,25 Q20,15 25,0 L20,-15 Q15,-25 0,-30 Z"
+            android:fillColor="#9D4EDD"
+            android:fillAlpha="0.3"/>
+        
+        <!-- Main spectral body -->
+        <path
+            android:pathData="M0,-25 Q-10,-20 -15,-10 L-18,0 Q-15,10 -8,18 L0,22 L8,18 Q15,10 18,0 L15,-10 Q10,-20 0,-25 Z"
+            android:fillColor="#00E5FF"/>
+        
+        <!-- Hood/head area -->
+        <path
+            android:pathData="M-8,-20 Q0,-25 8,-20 L10,-15 L5,-10 L0,-8 L-5,-10 L-10,-15 Z"
+            android:fillColor="#FF006E"/>
+        
+        <!-- Energy core (face) -->
+        <circle
+            android:cx="0"
+            android:cy="-12"
+            android:radius="6"
+            android:fillColor="#00E5FF"/>
+        
+        <!-- Flowing energy tendrils -->
+        <path
+            android:pathData="M-10,15 Q-15,20 -12,25"
+            android:strokeColor="#9D4EDD"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"/>
+        
+        <path
+            android:pathData="M10,15 Q15,20 12,25"
+            android:strokeColor="#9D4EDD"
+            android:strokeWidth="2"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"/>
+        
+        <!-- DJ hands on turntables -->
+        <path
+            android:pathData="M-15,5 L-20,12"
+            android:strokeColor="#00E5FF"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"/>
+        
+        <path
+            android:pathData="M15,5 L20,12"
+            android:strokeColor="#00E5FF"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"/>
+        
+        <!-- Turntable platters -->
+        <circle
+            android:cx="-20"
+            android:cy="15"
+            android:radius="5"
+            android:fillColor="#1A1A24"
+            android:strokeColor="#00E5FF"
+            android:strokeWidth="1"/>
+        
+        <circle
+            android:cx="20"
+            android:cy="15"
+            android:radius="5"
+            android:fillColor="#1A1A24"
+            android:strokeColor="#FF006E"
+            android:strokeWidth="1"/>
+        
+        <!-- Waveform accent -->
+        <path
+            android:pathData="M-25,-5 L-22,-8 L-20,-5 L-18,-2 L-16,-5 L-14,-8 L-12,-5"
+            android:strokeColor="#00E5FF"
+            android:strokeWidth="1"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.6"/>
+        
+        <path
+            android:pathData="M12,-5 L14,-8 L16,-5 L18,-2 L20,-5 L22,-8 L25,-5"
+            android:strokeColor="#FF006E"
+            android:strokeWidth="1"
+            android:strokeLineCap="round"
+            android:fillColor="@android:color/transparent"
+            android:strokeAlpha="0.6"/>
+    </group>
+</vector>
