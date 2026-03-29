@@ -18,22 +18,22 @@ import androidx.core.view.WindowCompat
 private val DarkColorScheme = darkColorScheme(
     primary = PhantomCyan,
     onPrimary = PhantomBlack,
-    primaryContainer = PhantomDarkGray,
+    primaryContainer = PhantomDarkPurple,
     onPrimaryContainer = PhantomCyan,
     
     secondary = PhantomPurple,
     onSecondary = PhantomBlack,
-    secondaryContainer = PhantomDarkGray,
+    secondaryContainer = PhantomMidPurple,
     onSecondaryContainer = PhantomPurple,
     
     tertiary = PhantomPink,
     onTertiary = PhantomBlack,
-    tertiaryContainer = PhantomDarkGray,
+    tertiaryContainer = PhantomDarkPurple,
     onTertiaryContainer = PhantomPink,
     
     error = PhantomPink,
     onError = PhantomBlack,
-    errorContainer = PhantomDarkGray,
+    errorContainer = PhantomDarkPurple,
     onErrorContainer = PhantomPink,
     
     background = PhantomBlack,
@@ -44,8 +44,8 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = PhantomLightGray,
     
-    outline = PhantomGray,
-    outlineVariant = PhantomDarkGray,
+    outline = PhantomMidPurple,
+    outlineVariant = PhantomDarkPurple,
     
     inverseSurface = PhantomWhite,
     inverseOnSurface = PhantomBlack,
@@ -74,12 +74,12 @@ private val LightColorScheme = lightColorScheme(
     surface = PhantomWhite,
     onSurface = PhantomBlack,
     surfaceVariant = PhantomLightGray,
-    onSurfaceVariant = PhantomDarkGray
+    onSurfaceVariant = PhantomDarkPurple
 )
 
 @Composable
 fun PhantomPlayerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Force dark theme by default
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
