@@ -8,9 +8,15 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.phantom.player.data.local.database.entities.Song
 import com.phantom.player.service.PlaybackService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,11 +38,19 @@ class AudioEngine @Inject constructor(
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
+    
+    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private var positionUpdateJob: Job? = null
 
     init {
         _player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
+                if (isPlaying) {
+                    startPositionUpdates()
+                } else {
+                    stopPositionUpdates()
+                }
                 updateNotification()
             }
 
@@ -51,6 +65,20 @@ class AudioEngine @Inject constructor(
                 }
             }
         })
+    }
+    
+    private fun startPositionUpdates() {
+        positionUpdateJob?.cancel()
+        positionUpdateJob = scope.launch {
+            while (isActive) {
+                _currentPosition.value = _player.currentPosition
+                delay(100)
+            }
+        }
+    }
+    
+    private fun stopPositionUpdates() {
+        positionUpdateJob?.cancel()
     }
 
     fun playSong(song: Song) {
@@ -115,6 +143,7 @@ class AudioEngine @Inject constructor(
     }
 
     fun release() {
+        stopPositionUpdates()
         _player.release()
         stopService()
     }
@@ -144,7 +173,14 @@ class AudioEngine @Inject constructor(
     
     private fun updateNotification() {
         _currentSong.value?.let { song ->
-            val intent = Intent(context, PlaybackService::class.java)
+            val intent = Intent(context, PlaybackService::class.java).apply {
+                action = "UPDATE_NOTIFICATION"
+                putExtra("song_title", song.title)
+                putExtra("song_artist", song.artist)
+                putExtra("song_album", song.album)
+                putExtra("album_art_path", song.albumArtPath)
+                putExtra("is_playing", _isPlaying.value)
+            }
             context.startService(intent)
         }
     }
