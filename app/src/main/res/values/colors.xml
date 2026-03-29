@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0A0A0F</color>
-    <color name="phantom_black">#0A0A0F</color>
-    <color name="phantom_cyan">#00E5FF</color>
-    <color name="phantom_purple">#9D4EDD</color>
-    <color name="phantom_pink">#FF006E</color>
+    <!-- Icon background -->
+    <color name="ic_launcher_background">#0A0614</color>
+    
+    <!-- Neon colors from image -->
+    <color name="phantom_black">#0A0614</color>
+    <color name="phantom_cyan">#00F0FF</color>
+    <color name="phantom_purple">#B24BF3</color>
+    <color name="phantom_pink">#FF1493</color>
+    <color name="phantom_blue">#0080FF</color>
+    <color name="phantom_teal">#00FFD1</color>
+    
+    <!-- Notification color -->
+    <color name="notification_accent">#00F0FF</color>
 </resources>
