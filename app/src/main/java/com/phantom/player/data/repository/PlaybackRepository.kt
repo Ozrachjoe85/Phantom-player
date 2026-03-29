@@ -54,4 +54,8 @@ class PlaybackRepository @Inject constructor(
     fun setShuffleMode(enabled: Boolean) {
         audioEngine.setShuffleMode(enabled)
     }
+    
+    fun getAudioSessionId(): Int {
+        return audioEngine.getAudioSessionId()
+    }
 }
