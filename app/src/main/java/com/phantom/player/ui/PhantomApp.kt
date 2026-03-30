@@ -135,7 +135,7 @@ fun AmbientBackgroundEffect() {
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    PhantomCyan.copy(alpha = 0.05f),
+                    PhantomPurple.copy(alpha = 0.05f),
                     Color.Transparent
                 ),
                 center = center1,
@@ -197,7 +197,7 @@ fun MiniPlayerBar(
                 .border(
                     1.dp,
                     Brush.horizontalGradient(
-                        listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
+                        listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
                     ),
                     RoundedCornerShape(16.dp)
                 )
@@ -215,10 +215,10 @@ fun MiniPlayerBar(
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             Brush.radialGradient(
-                                listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.5f))
+                                listOf(PhantomPurple.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.5f))
                             )
                         )
-                        .border(1.dp, PhantomCyan, RoundedCornerShape(8.dp)),
+                        .border(1.dp, PhantomPurple, RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (song?.albumArtPath != null) {
@@ -231,7 +231,7 @@ fun MiniPlayerBar(
                         Icon(
                             Icons.Default.MusicNote,
                             contentDescription = null,
-                            tint = PhantomCyan,
+                            tint = PhantomPurple,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -249,7 +249,7 @@ fun MiniPlayerBar(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = PhantomCyan,
+                        color = PhantomPurple,
                         maxLines = 1
                     )
                     Text(
@@ -269,17 +269,17 @@ fun MiniPlayerBar(
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                listOf(PhantomCyan.copy(alpha = 0.4f), PhantomCyan.copy(alpha = 0.2f))
+                                listOf(PhantomPurple.copy(alpha = 0.4f), PhantomPurple.copy(alpha = 0.2f))
                             )
                         )
-                        .border(2.dp, PhantomCyan, CircleShape)
+                        .border(2.dp, PhantomPurple, CircleShape)
                         .clickable { playerViewModel.togglePlayPause() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = null,
-                        tint = PhantomCyan,
+                        tint = PhantomPurple,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -321,9 +321,9 @@ fun HolographicBottomNavigation(navController: NavController) {
                     Brush.horizontalGradient(
                         listOf(
                             Color.Transparent,
-                            PhantomCyan.copy(alpha = 0.5f),
                             PhantomPurple.copy(alpha = 0.5f),
-                            PhantomPink.copy(alpha = 0.5f),
+                            PhantomPurple.copy(alpha = 0.5f),
+                            PhantomOrange.copy(alpha = 0.5f),
                             Color.Transparent
                         )
                     )
@@ -394,14 +394,14 @@ fun NavigationButton(
                     .rotate(rotation)
             ) {
                 drawCircle(
-                    color = PhantomCyan.copy(alpha = 0.3f),
+                    color = PhantomPurple.copy(alpha = 0.3f),
                     radius = size.minDimension / 2,
                     style = Stroke(width = 2f)
                 )
                 
                 // Scan line
                 drawLine(
-                    color = PhantomCyan.copy(alpha = 0.5f),
+                    color = PhantomPurple.copy(alpha = 0.5f),
                     start = center,
                     end = Offset(center.x + size.width / 2, center.y),
                     strokeWidth = 2f
@@ -420,7 +420,7 @@ fun NavigationButton(
                     if (isSelected) {
                         Brush.radialGradient(
                             listOf(
-                                PhantomCyan.copy(alpha = 0.4f),
+                                PhantomPurple.copy(alpha = 0.4f),
                                 PhantomPurple.copy(alpha = 0.2f)
                             )
                         )
@@ -435,7 +435,7 @@ fun NavigationButton(
                 )
                 .border(
                     width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) PhantomCyan else PhantomPurple.copy(alpha = 0.3f),
+                    color = if (isSelected) PhantomPurple else PhantomPurple.copy(alpha = 0.3f),
                     shape = CircleShape
                 )
                 .clickable(
@@ -448,7 +448,7 @@ fun NavigationButton(
             Icon(
                 imageVector = screen.icon,
                 contentDescription = screen.title,
-                tint = if (isSelected) PhantomCyan else PhantomPurple.copy(alpha = 0.6f),
+                tint = if (isSelected) PhantomPurple else PhantomPurple.copy(alpha = 0.6f),
                 modifier = Modifier.size(24.dp)
             )
             
@@ -460,7 +460,7 @@ fun NavigationButton(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = PhantomCyan,
+                    color = PhantomPurple,
                     fontSize = 8.sp
                 )
             }
