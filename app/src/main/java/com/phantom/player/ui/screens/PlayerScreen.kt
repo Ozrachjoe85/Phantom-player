@@ -398,16 +398,6 @@ fun GlitchTrackInfo(
     album: String,
     isPlaying: Boolean
 ) {
-    val glitchOffset by rememberInfiniteTransition(label = "glitch").animateFloat(
-        initialValue = 0f,
-        targetValue = if (isPlaying) 2f else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(100, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glitch"
-    )
-    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -440,8 +430,7 @@ fun GlitchTrackInfo(
                 ),
                 color = PhantomCyan,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.offset(x = glitchOffset.dp, y = 0.dp)
+                overflow = TextOverflow.Ellipsis
             )
             
             if (isPlaying) {
@@ -454,7 +443,7 @@ fun GlitchTrackInfo(
                     color = PhantomPink.copy(alpha = 0.3f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.offset(x = (-glitchOffset).dp, y = 1.dp)
+                    modifier = Modifier.offset(x = 2.dp, y = 1.dp)
                 )
             }
         }
