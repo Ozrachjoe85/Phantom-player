@@ -15,9 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.phantom.player.ui.screens.*
 import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.PlayerViewModel
@@ -221,7 +222,7 @@ fun MiniPlayerBar(
                     contentAlignment = Alignment.Center
                 ) {
                     if (song?.albumArtPath != null) {
-                        coil.compose.AsyncImage(
+                        AsyncImage(
                             model = song.albumArtPath,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize()
@@ -372,7 +373,7 @@ fun NavigationButton(
         label = "rotation"
     )
     
-    val scale by animateFloatAsState(
+    val scaleValue by animateFloatAsState(
         targetValue = if (isSelected) 1.1f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -442,7 +443,7 @@ fun NavigationButton(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 )
-                .scale(scale)
+                .scale(scaleValue)
         ) {
             Icon(
                 imageVector = screen.icon,
