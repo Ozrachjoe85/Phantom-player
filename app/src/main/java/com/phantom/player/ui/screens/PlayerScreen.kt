@@ -165,7 +165,7 @@ fun AnimatedBackgroundParticles(isPlaying: Boolean) {
                 val y = particle.y
                 
                 drawCircle(
-                    color = PhantomCyan.copy(alpha = 0.3f),
+                    color = PhantomPurple.copy(alpha = 0.3f),
                     radius = particle.size,
                     center = Offset(x * size.width, y * size.height)
                 )
@@ -219,7 +219,7 @@ fun PulsingRadialGlow(isPlaying: Boolean) {
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                PhantomCyan.copy(alpha = alpha),
+                                PhantomPurple.copy(alpha = alpha),
                                 PhantomPurple.copy(alpha = alpha * 0.5f),
                                 Color.Transparent
                             )
@@ -271,9 +271,9 @@ fun HolographicAlbumArt(
                 val radius = size.minDimension / 2 - (i * 20f)
                 drawCircle(
                     color = when (i % 3) {
-                        0 -> PhantomCyan.copy(alpha = 0.3f)
+                        0 -> PhantomPurple.copy(alpha = 0.3f)
                         1 -> PhantomPurple.copy(alpha = 0.3f)
-                        else -> PhantomPink.copy(alpha = 0.3f)
+                        else -> PhantomOrange.copy(alpha = 0.3f)
                     },
                     radius = radius,
                     style = Stroke(width = 2f)
@@ -289,7 +289,7 @@ fun HolographicAlbumArt(
                 val endY = center.y + sin(rad).toFloat() * (size.minDimension / 2)
                 
                 drawLine(
-                    color = PhantomCyan.copy(alpha = 0.2f),
+                    color = PhantomPurple.copy(alpha = 0.2f),
                     start = Offset(startX, startY),
                     end = Offset(endX, endY),
                     strokeWidth = 1f
@@ -314,10 +314,10 @@ fun HolographicAlbumArt(
                     width = 3.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            PhantomCyan,
                             PhantomPurple,
-                            PhantomPink,
-                            PhantomCyan
+                            PhantomPurple,
+                            PhantomOrange,
+                            PhantomPurple
                         )
                     ),
                     shape = RoundedCornerShape(20.dp)
@@ -339,7 +339,7 @@ fun HolographicAlbumArt(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    PhantomCyan.copy(alpha = 0.1f),
+                                    PhantomPurple.copy(alpha = 0.1f),
                                     Color.Transparent,
                                     PhantomPurple.copy(alpha = 0.1f)
                                 )
@@ -350,7 +350,7 @@ fun HolographicAlbumArt(
                 imageVector = Icons.Default.MusicNote,
                 contentDescription = "No Album Art",
                 modifier = Modifier.size(120.dp),
-                tint = PhantomCyan.copy(alpha = 0.3f)
+                tint = PhantomPurple.copy(alpha = 0.3f)
             )
         }
         
@@ -384,7 +384,7 @@ fun BoxScope.CornerAccents() {
             }
             drawPath(
                 path = path,
-                color = PhantomCyan,
+                color = PhantomPurple,
                 style = Stroke(width = 3f, cap = StrokeCap.Round)
             )
         }
@@ -414,7 +414,7 @@ fun GlitchTrackInfo(
             .border(
                 1.dp,
                 Brush.horizontalGradient(
-                    listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
+                    listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
                 ),
                 RoundedCornerShape(16.dp)
             )
@@ -428,7 +428,7 @@ fun GlitchTrackInfo(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = PhantomCyan,
+                color = PhantomPurple,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -440,7 +440,7 @@ fun GlitchTrackInfo(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     ),
-                    color = PhantomPink.copy(alpha = 0.3f),
+                    color = PhantomOrange.copy(alpha = 0.3f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.offset(x = 2.dp, y = 1.dp)
@@ -457,7 +457,7 @@ fun GlitchTrackInfo(
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.5.sp
             ),
-            color = PhantomPurple,
+            color = PhantomGreen,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -496,7 +496,7 @@ fun IntenseWaveformVisualizer(isPlaying: Boolean) {
             .height(80.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(PhantomBlack)
-            .border(1.dp, PhantomCyan.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(8.dp)
     ) {
         val width = size.width
@@ -517,7 +517,7 @@ fun IntenseWaveformVisualizer(isPlaying: Boolean) {
             
             // Outer glow
             drawLine(
-                color = PhantomCyan.copy(alpha = 0.2f),
+                color = PhantomPurple.copy(alpha = 0.2f),
                 start = Offset(x, centerY - amplitude - 2f),
                 end = Offset(x, centerY + amplitude + 2f),
                 strokeWidth = 6f,
@@ -528,9 +528,9 @@ fun IntenseWaveformVisualizer(isPlaying: Boolean) {
             drawLine(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        PhantomCyan,
                         PhantomPurple,
-                        PhantomPink
+                        PhantomPurple,
+                        PhantomOrange
                     )
                 ),
                 start = Offset(x, centerY - amplitude),
@@ -596,9 +596,9 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
             drawRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        PhantomCyan,
                         PhantomPurple,
-                        PhantomPink
+                        PhantomPurple,
+                        PhantomOrange
                     )
                 ),
                 topLeft = Offset(x + perspectiveOffset, height - barHeight),
@@ -608,14 +608,14 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
             // Top face
             val topWidth = barWidth * 0.8f
             drawRect(
-                color = PhantomCyan.copy(alpha = 0.8f),
+                color = PhantomPurple.copy(alpha = 0.8f),
                 topLeft = Offset(x + (barWidth - topWidth) / 2, height - barHeight - 3f),
                 size = androidx.compose.ui.geometry.Size(topWidth, 3f)
             )
             
             // Highlight edge
             drawLine(
-                color = PhantomCyan.copy(alpha = 0.5f),
+                color = PhantomPurple.copy(alpha = 0.5f),
                 start = Offset(x + perspectiveOffset, height - barHeight),
                 end = Offset(x + perspectiveOffset, height),
                 strokeWidth = 1f
@@ -644,7 +644,7 @@ fun NeonProgressBar(
                     )
                 )
             )
-            .border(1.dp, PhantomCyan.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(16.dp)
     ) {
         // Progress bar with glow
@@ -663,7 +663,7 @@ fun NeonProgressBar(
                     .blur(8.dp)
                     .background(
                         Brush.horizontalGradient(
-                            listOf(PhantomCyan, PhantomPurple, PhantomPink)
+                            listOf(PhantomPurple, PhantomPurple, PhantomOrange)
                         )
                     )
             )
@@ -675,7 +675,7 @@ fun NeonProgressBar(
                     .fillMaxHeight()
                     .background(
                         Brush.horizontalGradient(
-                            listOf(PhantomCyan, PhantomPurple, PhantomPink)
+                            listOf(PhantomPurple, PhantomPurple, PhantomOrange)
                         )
                     )
             )
@@ -694,7 +694,7 @@ fun NeonProgressBar(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = PhantomCyan
+                color = PhantomPurple
             )
             Text(
                 text = formatTime(duration),
@@ -738,13 +738,13 @@ fun EnhancedVUMeters(isPlaying: Boolean) {
         VUMeterChannel(
             label = "L",
             level = leftLevel.value,
-            color = PhantomCyan
+            color = PhantomPurple
         )
         
         VUMeterChannel(
             label = "R",
             level = rightLevel.value,
-            color = PhantomPink
+            color = PhantomOrange
         )
     }
 }
@@ -859,7 +859,7 @@ fun HolographicPlaybackControls(
             .border(
                 2.dp,
                 Brush.horizontalGradient(
-                    listOf(PhantomCyan, PhantomPurple, PhantomPink, PhantomCyan)
+                    listOf(PhantomPurple, PhantomPurple, PhantomOrange, PhantomPurple)
                 ),
                 RoundedCornerShape(24.dp)
             )
@@ -884,7 +884,7 @@ fun HolographicPlaybackControls(
                 icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 buttonSize = 96.dp,
                 iconSize = 48.dp,
-                color = PhantomCyan,
+                color = PhantomPurple,
                 onClick = onPlayPause,
                 isPrimary = true
             )
@@ -895,7 +895,7 @@ fun HolographicPlaybackControls(
             icon = Icons.Default.SkipNext,
             buttonSize = 64.dp,
             iconSize = 32.dp,
-            color = PhantomPink,
+            color = PhantomOrange,
             onClick = onNext
         )
     }
@@ -1000,7 +1000,7 @@ fun SecondaryControls(
         
         SecondaryButton(
             icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            color = if (isFavorite) PhantomPink else PhantomPurple,
+            color = if (isFavorite) PhantomOrange else PhantomPurple,
             onClick = onFavoriteToggle
         )
         
@@ -1012,7 +1012,7 @@ fun SecondaryControls(
         
         SecondaryButton(
             icon = Icons.Default.QueueMusic,
-            color = PhantomCyan,
+            color = PhantomPurple,
             onClick = { }
         )
     }
