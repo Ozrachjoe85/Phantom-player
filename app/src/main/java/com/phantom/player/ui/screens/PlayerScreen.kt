@@ -576,14 +576,10 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
         val perspective = 0.7f
         
         bars.forEachIndexed { index, heightState ->
-            val animatedHeight by animateFloatAsState(
-                targetValue = if (isPlaying) heightState.value else 0f,
-                animationSpec = tween(50),
-                label = "bar_$index"
-            )
+            val targetHeight = if (isPlaying) heightState.value else 0f
             
             val x = index * barWidth
-            val barHeight = animatedHeight * height
+            val barHeight = targetHeight * height
             
             // 3D perspective effect
             val bottomWidth = barWidth * perspective
