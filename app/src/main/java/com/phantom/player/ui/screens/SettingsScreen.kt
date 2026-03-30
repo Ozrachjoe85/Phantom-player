@@ -62,7 +62,7 @@ fun SettingsScreen(
                     )
                     
                     SettingSlider(
-                        icon = Icons.Default.FadeIn,
+                        icon = Icons.Default.MusicNote,
                         title = "Fade In Duration",
                         description = "${fadeInDuration.toInt()} seconds",
                         value = fadeInDuration,
@@ -71,7 +71,7 @@ fun SettingsScreen(
                     )
                     
                     SettingSlider(
-                        icon = Icons.Default.FadeOut,
+                        icon = Icons.Default.MusicNote,
                         title = "Fade Out Duration",
                         description = "${fadeOutDuration.toInt()} seconds",
                         value = fadeOutDuration,
