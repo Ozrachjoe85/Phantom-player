@@ -122,7 +122,7 @@ fun PermissionScreen(onRequestPermission: () -> Unit) {
                 .border(
                     2.dp,
                     Brush.linearGradient(
-                        listOf(PhantomCyan, PhantomPurple, PhantomPink)
+                        listOf(PhantomPurple, PhantomPurple, PhantomOrange)
                     ),
                     RoundedCornerShape(24.dp)
                 )
@@ -137,10 +137,10 @@ fun PermissionScreen(onRequestPermission: () -> Unit) {
                         .clip(RoundedCornerShape(24.dp))
                         .background(
                             Brush.radialGradient(
-                                listOf(PhantomCyan, PhantomPurple)
+                                listOf(PhantomPurple, PhantomPurple)
                             )
                         )
-                        .border(3.dp, PhantomCyan, RoundedCornerShape(24.dp)),
+                        .border(3.dp, PhantomPurple, RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -159,7 +159,7 @@ fun PermissionScreen(onRequestPermission: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 3.sp
                     ),
-                    color = PhantomCyan
+                    color = PhantomPurple
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -211,10 +211,10 @@ fun PermissionScreen(onRequestPermission: () -> Unit) {
                             .fillMaxSize()
                             .background(
                                 Brush.horizontalGradient(
-                                    listOf(PhantomCyan, PhantomPurple)
+                                    listOf(PhantomPurple, PhantomPurple)
                                 )
                             )
-                            .border(2.dp, PhantomCyan, RoundedCornerShape(12.dp)),
+                            .border(2.dp, PhantomPurple, RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
