@@ -140,7 +140,7 @@ fun EqControlPanel(
             )
             .padding(16.dp)
     ) {
-        Column(spacing = 12.dp) {
+        Column {
             // Power and Mode Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -170,6 +170,8 @@ fun EqControlPanel(
                 }
             }
             
+            Spacer(modifier = Modifier.height(12.dp))
+            
             // View Mode Toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -191,6 +193,8 @@ fun EqControlPanel(
                     modifier = Modifier.weight(1f)
                 )
             }
+            
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Auto EQ Toggle
             Row(
@@ -463,26 +467,6 @@ fun BoxScope.OscilloscopeGrid() {
                     intervals = floatArrayOf(10f, 10f)
                 )
             )
-        }
-    }
-}
-        
-        // dB labels
-        val dbLabels = listOf("+12dB", "+6dB", "0dB", "-6dB", "-12dB")
-        dbLabels.forEachIndexed { index, label ->
-            drawContext.canvas.nativeCanvas.apply {
-                val y = (height / 4) * index
-                drawText(
-                    label,
-                    16f,
-                    y + 5f,
-                    android.graphics.Paint().apply {
-                        color = android.graphics.Color.parseColor("#9D4EDD")
-                        textSize = 24f
-                        isAntiAlias = true
-                    }
-                )
-            }
         }
     }
 }
@@ -962,5 +946,3 @@ private fun formatFrequency(frequency: Int): String {
         "$frequency"
     }
 }
-
-
