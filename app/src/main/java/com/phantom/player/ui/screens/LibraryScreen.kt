@@ -48,7 +48,6 @@ fun LibraryScreen(
 ) {
     val songs by libraryViewModel.songs.collectAsState()
     val isScanning by libraryViewModel.isScanning.collectAsState()
-    val scanProgress by libraryViewModel.scanProgress.collectAsState()
     var viewMode by remember { mutableStateOf(LibraryViewMode.SONGS) }
     var searchQuery by remember { mutableStateOf("") }
     
@@ -69,7 +68,7 @@ fun LibraryScreen(
             
             // Scan Status Banner
             if (isScanning) {
-                ScanStatusBanner(progress = scanProgress)
+             ScanStatusBanner(progress = 0.5f)
             }
             
             // Content based on view mode
