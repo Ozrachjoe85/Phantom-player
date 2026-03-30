@@ -16,62 +16,62 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PhantomCyan,
+    primary = PhantomPurple,
     onPrimary = PhantomBlack,
     primaryContainer = PhantomDarkPurple,
-    onPrimaryContainer = PhantomCyan,
+    onPrimaryContainer = PhantomPurple,
     
     secondary = PhantomPurple,
     onSecondary = PhantomBlack,
-    secondaryContainer = PhantomMidPurple,
+    secondaryContainer = PhantomDarkPurple,
     onSecondaryContainer = PhantomPurple,
     
-    tertiary = PhantomPink,
+    tertiary = PhantomOrange,
     onTertiary = PhantomBlack,
     tertiaryContainer = PhantomDarkPurple,
-    onTertiaryContainer = PhantomPink,
+    onTertiaryContainer = PhantomOrange,
     
-    error = PhantomPink,
+    error = PhantomOrange,
     onError = PhantomBlack,
     errorContainer = PhantomDarkPurple,
-    onErrorContainer = PhantomPink,
+    onErrorContainer = PhantomOrange,
     
     background = PhantomBlack,
     onBackground = PhantomWhite,
     
-    surface = SurfaceDark,
+    surface = PhantomBlack,
     onSurface = PhantomWhite,
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = PhantomLightGray,
+    surfaceVariant = PhantomDarkPurple,
+    onSurfaceVariant = PhantomWhite,
     
-    outline = PhantomMidPurple,
+    outline = PhantomDarkPurple,
     outlineVariant = PhantomDarkPurple,
     
     inverseSurface = PhantomWhite,
     inverseOnSurface = PhantomBlack,
-    inversePrimary = PhantomBlue,
+    inversePrimary = PhantomGreen,
     
     // Surface tints for glass effect
-    surfaceTint = PhantomCyan,
+    surfaceTint = PhantomPurple,
     
     // Scrim for overlays
     scrim = PhantomBlack.copy(alpha = 0.8f)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PhantomBlue,
+    primary = PhantomGreen,
     onPrimary = PhantomWhite,
-    primaryContainer = PhantomLightGray,
+    primaryContainer = PhantomWhite,
     onPrimaryContainer = PhantomBlack,
     
     secondary = PhantomPurple,
     onSecondary = PhantomWhite,
-    secondaryContainer = PhantomLightGray,
+    secondaryContainer = PhantomWhite,
     onSecondaryContainer = PhantomBlack,
     
-    tertiary = PhantomPink,
+    tertiary = PhantomOrange,
     onTertiary = PhantomWhite,
-    tertiaryContainer = PhantomLightGray,
+    tertiaryContainer = PhantomWhite,
     onTertiaryContainer = PhantomBlack,
     
     background = PhantomWhite,
@@ -79,7 +79,7 @@ private val LightColorScheme = lightColorScheme(
     
     surface = PhantomWhite,
     onSurface = PhantomBlack,
-    surfaceVariant = PhantomLightGray,
+    surfaceVariant = PhantomWhite,
     onSurfaceVariant = PhantomDarkPurple
 )
 
