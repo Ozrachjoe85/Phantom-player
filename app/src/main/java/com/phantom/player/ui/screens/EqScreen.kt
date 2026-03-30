@@ -435,7 +435,6 @@ fun BoxScope.OscilloscopeGrid() {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
-        val centerY = height / 2
         
         // Horizontal grid lines
         for (i in 0..4) {
@@ -465,6 +464,8 @@ fun BoxScope.OscilloscopeGrid() {
                 )
             )
         }
+    }
+}
         
         // dB labels
         val dbLabels = listOf("+12dB", "+6dB", "0dB", "-6dB", "-12dB")
@@ -962,6 +963,4 @@ private fun formatFrequency(frequency: Int): String {
     }
 }
 
-private fun ColumnScope.spacing(dp: Dp) {
-    Spacer(modifier = Modifier.height(dp))
-}
+
