@@ -1,6 +1,7 @@
 package com.phantom.player.ui.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,10 +19,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,11 +37,10 @@ import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.LibraryViewModel
 import com.phantom.player.ui.viewmodel.PlayerViewModel
 
-enum class LibraryView {
+enum class LibraryViewMode {
     SONGS, ALBUMS, ARTISTS, PLAYLISTS
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     libraryViewModel: LibraryViewModel = hiltViewModel(),
@@ -45,9 +48,8 @@ fun LibraryScreen(
 ) {
     val songs by libraryViewModel.songs.collectAsState()
     val isScanning by libraryViewModel.isScanning.collectAsState()
-    val scanStatus by libraryViewModel.scanStatus.collectAsState()
-    
-    var currentView by remember { mutableStateOf(LibraryView.SONGS) }
+    val scanProgress by libraryViewModel.scanProgress.collectAsState()
+    var viewMode by remember { mutableStateOf(LibraryViewMode.SONGS) }
     var searchQuery by remember { mutableStateOf("") }
     
     Box(
@@ -55,133 +57,47 @@ fun LibraryScreen(
             .fillMaxSize()
             .background(PhantomBlack)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Top Glass Panel with Search and View Selector
-            GlassPanelHeader(
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header with Search and View Mode Selector
+            LibraryHeader(
                 searchQuery = searchQuery,
-                onSearchChange = { searchQuery = it },
-                currentView = currentView,
-                onViewChange = { currentView = it },
-                onScanClick = { libraryViewModel.scanLibrary() },
-                isScanning = isScanning
+                onSearchQueryChange = { searchQuery = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it },
+                onScanLibrary = { libraryViewModel.scanLibrary() }
             )
             
             // Scan Status Banner
-            scanStatus?.let { status ->
-                ScanStatusBanner(
-                    status = status,
-                    isScanning = isScanning,
-                    onDismiss = { libraryViewModel.clearScanStatus() }
-                )
+            if (isScanning) {
+                ScanStatusBanner(progress = scanProgress)
             }
             
-            // Content Area
-            when (currentView) {
-                LibraryView.SONGS -> SongsView(
-                    songs = songs.filter { 
-                        it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.artist.contains(searchQuery, ignoreCase = true)
-                    },
-                    onSongClick = { song -> playerViewModel.play(song) },
-                    onPlayAll = { playerViewModel.setPlaylist(songs) }
-                )
-                LibraryView.ALBUMS -> AlbumsView(songs = songs)
-                LibraryView.ARTISTS -> ArtistsView(songs = songs)
-                LibraryView.PLAYLISTS -> PlaylistsView()
-            }
-        }
-        
-        // Empty State
-        if (songs.isEmpty() && !isScanning) {
-            EmptyLibraryState(
-                onScanClick = { libraryViewModel.scanLibrary() }
-            )
-        }
-    }
-}
-
-@Composable
-fun GlassPanelHeader(
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-    currentView: LibraryView,
-    onViewChange: (LibraryView) -> Unit,
-    onScanClick: () -> Unit,
-    isScanning: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        SurfaceGlass.copy(alpha = 0.4f),
-                        SurfaceGlass.copy(alpha = 0.2f)
-                    )
-                )
-            )
-            .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
-                ),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Column(spacing = 12.dp) {
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        "SEARCH LIBRARY...",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            letterSpacing = 1.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = PhantomCyan.copy(alpha = 0.5f)
-                    )
-                },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, null, tint = PhantomCyan)
-                },
-                trailingIcon = {
-                    IconButton(onClick = onScanClick, enabled = !isScanning) {
-                        Icon(
-                            if (isScanning) Icons.Default.Refresh else Icons.Default.LibraryMusic,
-                            "Scan",
-                            tint = PhantomPurple
-                        )
+            // Content based on view mode
+            when {
+                songs.isEmpty() && !isScanning -> {
+                    EmptyLibraryState(onScanClick = { libraryViewModel.scanLibrary() })
+                }
+                else -> {
+                    when (viewMode) {
+                        LibraryViewMode.SONGS -> {
+                            SongsGridView(
+                                songs = songs.filter {
+                                    it.title.contains(searchQuery, ignoreCase = true) ||
+                                    it.artist.contains(searchQuery, ignoreCase = true)
+                                },
+                                onSongClick = { song -> playerViewModel.playSong(song) }
+                            )
+                        }
+                        LibraryViewMode.ALBUMS -> {
+                            AlbumsView(songs = songs)
+                        }
+                        LibraryViewMode.ARTISTS -> {
+                            ArtistsView(songs = songs)
+                        }
+                        LibraryViewMode.PLAYLISTS -> {
+                            PlaylistsView()
+                        }
                     }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PhantomCyan,
-                    unfocusedBorderColor = PhantomPurple.copy(alpha = 0.5f),
-                    focusedTextColor = PhantomWhite,
-                    unfocusedTextColor = PhantomWhite,
-                    cursorColor = PhantomCyan
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-            
-            // View Selector Pills
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                LibraryView.values().forEach { view ->
-                    ViewPillButton(
-                        label = view.name,
-                        isSelected = currentView == view,
-                        onClick = { onViewChange(view) }
-                    )
                 }
             }
         }
@@ -189,45 +105,254 @@ fun GlassPanelHeader(
 }
 
 @Composable
-fun ViewPillButton(
+fun LibraryHeader(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    viewMode: LibraryViewMode,
+    onViewModeChange: (LibraryViewMode) -> Unit,
+    onScanLibrary: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        SurfaceGlass.copy(alpha = 0.4f),
+                        SurfaceGlass.copy(alpha = 0.2f)
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
+                ),
+                RoundedCornerShape(20.dp)
+            )
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Title and Scan Button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "LIBRARY",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 3.sp
+                ),
+                color = PhantomCyan
+            )
+            
+            IconButton(
+                onClick = onScanLibrary,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(PhantomPurple.copy(alpha = 0.3f), Color.Transparent)
+                        )
+                    )
+                    .border(1.dp, PhantomPurple, CircleShape)
+            ) {
+                Icon(
+                    Icons.Default.Refresh,
+                    contentDescription = "Scan Library",
+                    tint = PhantomPurple
+                )
+            }
+        }
+        
+        // Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp)),
+            placeholder = {
+                Text("Search songs, artists...", color = PhantomWhite.copy(alpha = 0.5f))
+            },
+            leadingIcon = {
+                Icon(Icons.Default.Search, null, tint = PhantomCyan)
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
+                        Icon(Icons.Default.Close, null, tint = PhantomPurple)
+                    }
+                }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = PhantomWhite,
+                unfocusedTextColor = PhantomWhite,
+                focusedBorderColor = PhantomCyan,
+                unfocusedBorderColor = PhantomPurple.copy(alpha = 0.3f),
+                cursorColor = PhantomCyan,
+                focusedContainerColor = PhantomBlack.copy(alpha = 0.5f),
+                unfocusedContainerColor = PhantomBlack.copy(alpha = 0.3f)
+            ),
+            singleLine = true
+        )
+        
+        // View Mode Pills
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ViewModePill(
+                label = "SONGS",
+                isSelected = viewMode == LibraryViewMode.SONGS,
+                onClick = { onViewModeChange(LibraryViewMode.SONGS) },
+                modifier = Modifier.weight(1f)
+            )
+            ViewModePill(
+                label = "ALBUMS",
+                isSelected = viewMode == LibraryViewMode.ALBUMS,
+                onClick = { onViewModeChange(LibraryViewMode.ALBUMS) },
+                modifier = Modifier.weight(1f)
+            )
+            ViewModePill(
+                label = "ARTISTS",
+                isSelected = viewMode == LibraryViewMode.ARTISTS,
+                onClick = { onViewModeChange(LibraryViewMode.ARTISTS) },
+                modifier = Modifier.weight(1f)
+            )
+            ViewModePill(
+                label = "PLAYLISTS",
+                isSelected = viewMode == LibraryViewMode.PLAYLISTS,
+                onClick = { onViewModeChange(LibraryViewMode.PLAYLISTS) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ViewModePill(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) {
-        Brush.horizontalGradient(listOf(PhantomCyan, PhantomPurple))
-    } else {
-        Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-    }
-    
     Box(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(backgroundColor)
+            .background(
+                if (isSelected) {
+                    Brush.horizontalGradient(
+                        listOf(PhantomCyan.copy(alpha = 0.4f), PhantomPurple.copy(alpha = 0.4f))
+                    )
+                } else {
+                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
+            )
             .border(
-                width = 1.dp,
-                color = if (isSelected) PhantomCyan else PhantomPurple.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(20.dp)
+                1.dp,
+                if (isSelected) PhantomCyan else PhantomPurple.copy(alpha = 0.3f),
+                RoundedCornerShape(20.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label,
+            label,
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             ),
-            color = if (isSelected) PhantomBlack else PhantomCyan
+            color = if (isSelected) PhantomWhite else PhantomPurple
         )
     }
 }
 
 @Composable
-fun SongsView(
+fun ScanStatusBanner(progress: Float) {
+    val infiniteTransition = rememberInfiniteTransition(label = "scan")
+    val offset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "scan_offset"
+    )
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        PhantomCyan.copy(alpha = 0.2f),
+                        PhantomPurple.copy(alpha = 0.2f)
+                    )
+                )
+            )
+            .border(1.dp, PhantomCyan.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Animated scanning icon
+            Canvas(modifier = Modifier.size(24.dp).rotate(offset * 360f)) {
+                drawCircle(
+                    color = PhantomCyan,
+                    radius = size.minDimension / 4,
+                    style = Stroke(width = 3f)
+                )
+                drawLine(
+                    color = PhantomCyan,
+                    start = center,
+                    end = Offset(center.x + size.width / 2, center.y),
+                    strokeWidth = 3f
+                )
+            }
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "SCANNING LIBRARY...",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = PhantomCyan
+                )
+                Text(
+                    "${(progress * 100).toInt()}% complete",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PhantomPurple
+                )
+            }
+            
+            CircularProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.size(32.dp),
+                color = PhantomCyan,
+                strokeWidth = 3.dp,
+            )
+        }
+    }
+}
+
+@Composable
+fun SongsGridView(
     songs: List<Song>,
-    onSongClick: (Song) -> Unit,
-    onPlayAll: () -> Unit
+    onSongClick: (Song) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Play All Button
@@ -236,36 +361,41 @@ fun SongsView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(
                         Brush.horizontalGradient(
                             listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.3f))
                         )
                     )
-                    .border(1.dp, PhantomCyan, RoundedCornerShape(12.dp))
-                    .clickable(onClick = onPlayAll)
+                    .border(1.dp, PhantomCyan, RoundedCornerShape(16.dp))
+                    .clickable { onSongClick(songs.first()) }
                     .padding(16.dp)
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Default.PlayArrow, null, tint = PhantomCyan, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Play All",
+                        tint = PhantomCyan,
+                        modifier = Modifier.size(24.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "PLAY ALL ${songs.size} TRACKS",
+                        "PLAY ALL (${songs.size} TRACKS)",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.5.sp
                         ),
-                        color = PhantomCyan
+                        color = PhantomWhite
                     )
                 }
             }
         }
         
-        // Song Grid
+        // Songs Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(16.dp),
@@ -281,10 +411,10 @@ fun SongsView(
 
 @Composable
 fun SongCard(song: Song, onClick: () -> Unit) {
-    val glowAnimation = rememberInfiniteTransition(label = "glow")
+    val glowAnimation = rememberInfiniteTransition(label = "card_glow")
     val glowAlpha by glowAnimation.animateFloat(
         initialValue = 0.3f,
-        targetValue = 0.7f,
+        targetValue = 0.6f,
         animationSpec = infiniteRepeatable(
             animation = tween(2000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -296,84 +426,85 @@ fun SongCard(song: Song, onClick: () -> Unit) {
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
-            .background(EquipmentMetal)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        PhantomDarkPurple.copy(alpha = 0.5f),
+                        PhantomBlack
+                    )
+                )
+            )
             .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
+                1.dp,
+                Brush.linearGradient(
+                    listOf(
                         PhantomCyan.copy(alpha = glowAlpha),
                         PhantomPurple.copy(alpha = glowAlpha)
                     )
                 ),
-                shape = RoundedCornerShape(16.dp)
+                RoundedCornerShape(16.dp)
             )
             .clickable(onClick = onClick)
     ) {
-        // Album Art Background
-        song.albumArtPath?.let { path ->
-            AsyncImage(
-                model = path,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            
-            // Dark Gradient Overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                PhantomBlack.copy(alpha = 0.9f)
-                            )
-                        )
-                    )
-            )
-        }
-        
-        // Song Info Overlay
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp),
-            verticalArrangement = Arrangement.Bottom
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Album Art
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.radialGradient(
+                            listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.5f))
+                        )
+                    )
+                    .border(1.dp, PhantomCyan.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (song.albumArtPath != null) {
+                    AsyncImage(
+                        model = song.albumArtPath,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.MusicNote,
+                        contentDescription = null,
+                        tint = PhantomCyan,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Song Info
             Text(
                 text = song.title.uppercase(),
-                style = MaterialTheme.typography.titleSmall.copy(
+                style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 ),
-                color = PhantomCyan,
-                maxLines = 2,
+                color = PhantomWhite,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            
             Text(
                 text = song.artist.uppercase(),
                 style = MaterialTheme.typography.bodySmall.copy(
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 0.3.sp
                 ),
                 color = PhantomPurple,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
-            )
-        }
-        
-        // Play Icon on Hover/Press
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            contentAlignment = Alignment.TopEnd
-        ) {
-            Icon(
-                Icons.Default.PlayCircle,
-                contentDescription = "Play",
-                tint = PhantomCyan.copy(alpha = 0.8f),
-                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -381,20 +512,24 @@ fun SongCard(song: Song, onClick: () -> Unit) {
 
 @Composable
 fun AlbumsView(songs: List<Song>) {
-    val albums = songs.groupBy { it.album }
+    val albums = remember(songs) {
+        songs.groupBy { it.album }.map { (album, albumSongs) ->
+            album to albumSongs
+        }
+    }
     
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(albums.entries.toList()) { (album, albumSongs) ->
+        items(albums) { (album, albumSongs) ->
             AlbumCard(
                 albumName = album,
-                artistName = albumSongs.firstOrNull()?.artist ?: "Unknown",
+                artist = albumSongs.firstOrNull()?.artist ?: "Unknown",
                 trackCount = albumSongs.size,
-                albumArt = albumSongs.firstOrNull()?.albumArtPath
+                albumArtPath = albumSongs.firstOrNull()?.albumArtPath
             )
         }
     }
@@ -403,63 +538,87 @@ fun AlbumsView(songs: List<Song>) {
 @Composable
 fun AlbumCard(
     albumName: String,
-    artistName: String,
+    artist: String,
     trackCount: Int,
-    albumArt: String?
+    albumArtPath: String?
 ) {
     Box(
         modifier = Modifier
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(20.dp))
+            .aspectRatio(0.8f)
+            .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(PhantomDarkPurple, PhantomBlack)
+                    listOf(
+                        SurfaceGlass.copy(alpha = 0.3f),
+                        SurfaceGlass.copy(alpha = 0.1f)
+                    )
                 )
             )
-            .border(2.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
             .clickable { }
+            .padding(12.dp)
     ) {
-        albumArt?.let {
-            AsyncImage(
-                model = it,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Album Art
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, PhantomBlack.copy(alpha = 0.95f))
+                        Brush.radialGradient(
+                            listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.5f))
                         )
                     )
-            )
-        }
-        
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Bottom
-        ) {
+                    .border(1.dp, PhantomCyan.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (albumArtPath != null) {
+                    AsyncImage(
+                        model = albumArtPath,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Album,
+                        contentDescription = null,
+                        tint = PhantomCyan,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
             Text(
-                albumName.uppercase(),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = PhantomCyan,
+                text = albumName.uppercase(),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = PhantomWhite,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+            
             Text(
-                artistName.uppercase(),
-                style = MaterialTheme.typography.bodySmall,
+                text = artist.uppercase(),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    letterSpacing = 0.3.sp
+                ),
                 color = PhantomPurple,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+            
             Text(
-                "$trackCount TRACKS",
+                text = "$trackCount TRACKS",
                 style = MaterialTheme.typography.labelSmall,
-                color = PhantomPink.copy(alpha = 0.7f)
+                color = PhantomCyan.copy(alpha = 0.7f)
             )
         }
     }
@@ -467,13 +626,19 @@ fun AlbumCard(
 
 @Composable
 fun ArtistsView(songs: List<Song>) {
-    val artists = songs.groupBy { it.artist }
+    val artists = remember(songs) {
+        songs.groupBy { it.artist }.map { (artist, artistSongs) ->
+            artist to artistSongs
+        }
+    }
     
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(artists.entries.toList()) { (artist, artistSongs) ->
+        items(artists) { (artist, artistSongs) ->
             ArtistCard(
                 artistName = artist,
                 trackCount = artistSongs.size,
@@ -484,66 +649,79 @@ fun ArtistsView(songs: List<Song>) {
 }
 
 @Composable
-fun ArtistCard(artistName: String, trackCount: Int, albumCount: Int) {
+fun ArtistCard(
+    artistName: String,
+    trackCount: Int,
+    albumCount: Int
+) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .background(
-                Brush.horizontalGradient(
+                Brush.radialGradient(
                     listOf(
-                        SurfaceGlass.copy(alpha = 0.3f),
-                        SurfaceGlass.copy(alpha = 0.1f)
+                        PhantomPurple.copy(alpha = 0.3f),
+                        PhantomBlack
                     )
                 )
             )
-            .border(1.dp, PhantomCyan.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+            .border(1.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .clickable { }
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
         ) {
+            // Artist Avatar
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .size(80.dp)
+                    .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
-                            listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.5f))
+                            listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
                         )
                     )
-                    .border(2.dp, PhantomCyan, RoundedCornerShape(28.dp)),
+                    .border(2.dp, PhantomCyan, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    artistName.first().uppercase(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = PhantomCyan
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    tint = PhantomCyan,
+                    modifier = Modifier.size(40.dp)
                 )
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    artistName.uppercase(),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = PhantomWhite,
-                    maxLines = 1
-                )
-                Text(
-                    "$albumCount ALBUMS • $trackCount TRACKS",
-                    style = MaterialTheme.typography.bodySmall.copy(letterSpacing = 0.5.sp),
-                    color = PhantomPurple
-                )
-            }
+            Text(
+                text = artistName.uppercase(),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = PhantomWhite,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
             
-            Icon(Icons.Default.ChevronRight, null, tint = PhantomCyan)
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = "$albumCount ALBUMS",
+                style = MaterialTheme.typography.bodySmall,
+                color = PhantomPurple
+            )
+            
+            Text(
+                text = "$trackCount TRACKS",
+                style = MaterialTheme.typography.bodySmall,
+                color = PhantomCyan.copy(alpha = 0.7f)
+            )
         }
     }
 }
@@ -551,65 +729,36 @@ fun ArtistCard(artistName: String, trackCount: Int, albumCount: Int) {
 @Composable
 fun PlaylistsView() {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            "PLAYLISTS COMING SOON",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            ),
-            color = PhantomCyan.copy(alpha = 0.5f)
-        )
-    }
-}
-
-@Composable
-fun ScanStatusBanner(
-    status: String,
-    isScanning: Boolean,
-    onDismiss: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(PhantomPurple.copy(alpha = 0.3f), PhantomPink.copy(alpha = 0.3f))
-                )
-            )
-            .border(1.dp, PhantomPink, RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (isScanning) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = PhantomCyan
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Text(
-                status.uppercase(),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomWhite,
-                modifier = Modifier.weight(1f)
+            Icon(
+                Icons.Default.QueueMusic,
+                contentDescription = null,
+                tint = PhantomPurple,
+                modifier = Modifier.size(64.dp)
             )
-            if (!isScanning) {
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, null, tint = PhantomPink)
-                }
-            }
+            
+            Text(
+                "PLAYLISTS COMING SOON",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = PhantomCyan
+            )
+            
+            Text(
+                "Create and manage custom playlists",
+                style = MaterialTheme.typography.bodyMedium,
+                color = PhantomPurple
+            )
         }
     }
 }
@@ -617,48 +766,96 @@ fun ScanStatusBanner(
 @Composable
 fun EmptyLibraryState(onScanClick: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Icon(
-                Icons.Default.LibraryMusic,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp),
-                tint = PhantomCyan.copy(alpha = 0.3f)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "NO MUSIC DETECTED",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
+            // Animated radar icon
+            val infiniteTransition = rememberInfiniteTransition(label = "empty")
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(3000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
                 ),
-                color = PhantomCyan.copy(alpha = 0.5f)
+                label = "rotation"
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onScanClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PhantomCyan,
-                    contentColor = PhantomBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Refresh, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "SCAN LIBRARY",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
+            
+            Canvas(modifier = Modifier.size(120.dp).rotate(rotation)) {
+                drawCircle(
+                    color = PhantomCyan.copy(alpha = 0.3f),
+                    radius = size.minDimension / 2,
+                    style = Stroke(width = 3f)
                 )
+                drawCircle(
+                    color = PhantomPurple.copy(alpha = 0.3f),
+                    radius = size.minDimension / 3,
+                    style = Stroke(width = 3f)
+                )
+                drawLine(
+                    color = PhantomCyan,
+                    start = center,
+                    end = Offset(center.x + size.width / 2, center.y),
+                    strokeWidth = 3f
+                )
+            }
+            
+            Text(
+                "NO MUSIC FOUND",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 3.sp
+                ),
+                color = PhantomCyan
+            )
+            
+            Text(
+                "Scan your device to find music files",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    letterSpacing = 1.sp
+                ),
+                color = PhantomPurple
+            )
+            
+            // Scan Button
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.5f))
+                        )
+                    )
+                    .border(2.dp, PhantomCyan, RoundedCornerShape(16.dp))
+                    .clickable(onClick = onScanClick)
+                    .padding(horizontal = 32.dp, vertical = 16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = PhantomWhite,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "SCAN LIBRARY",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        ),
+                        color = PhantomWhite
+                    )
+                }
             }
         }
     }
 }
-
