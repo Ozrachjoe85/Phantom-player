@@ -509,8 +509,8 @@ fun IntenseWaveformVisualizer(isPlaying: Boolean) {
             val progress = if (isPlaying) animatedProgress else 0f
             
             val amplitude = if (isPlaying) {
-                sin((i + progress * 20) * 0.3) * height * 0.4f *
-                        (0.5f + Random.nextFloat() * 0.5f)
+                (sin((i + progress * 20) * 0.3).toFloat() * height * 0.4f *
+                        (0.5f + Random.nextFloat() * 0.5f))
             } else {
                 0f
             }
