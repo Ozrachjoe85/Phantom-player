@@ -19,12 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -245,7 +243,7 @@ fun HolographicAlbumArt(
         label = "rotation"
     )
     
-    val scale by animateFloatAsState(
+    val scaleAnim by animateFloatAsState(
         targetValue = if (isPlaying) 1f else 0.95f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -257,7 +255,7 @@ fun HolographicAlbumArt(
     Box(
         modifier = Modifier
             .size(320.dp)
-            .scale(scale),
+            .scale(scaleAnim),
         contentAlignment = Alignment.Center
     ) {
         // Rotating Holographic Ring
@@ -441,7 +439,7 @@ fun GlitchTrackInfo(
                 color = PhantomCyan,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.offset(x = glitchOffset.dp)
+                modifier = Modifier.offset(x = glitchOffset.dp, y = 0.dp)
             )
             
             if (isPlaying) {
@@ -597,7 +595,6 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
             val barHeight = animatedHeight * height
             
             // 3D perspective effect
-            val topWidth = barWidth * 0.8f
             val bottomWidth = barWidth * perspective
             val perspectiveOffset = (barWidth - bottomWidth) / 2
             
@@ -605,7 +602,7 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
             drawRect(
                 color = Color.Black.copy(alpha = 0.5f),
                 topLeft = Offset(x + perspectiveOffset + 2f, height - 2f),
-                size = Size(bottomWidth, 2f)
+                size = androidx.compose.ui.geometry.Size(bottomWidth, 2f)
             )
             
             // 3D Bar
@@ -618,14 +615,15 @@ fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
                     )
                 ),
                 topLeft = Offset(x + perspectiveOffset, height - barHeight),
-                size = Size(bottomWidth, barHeight)
+                size = androidx.compose.ui.geometry.Size(bottomWidth, barHeight)
             )
             
             // Top face
+            val topWidth = barWidth * 0.8f
             drawRect(
                 color = PhantomCyan.copy(alpha = 0.8f),
                 topLeft = Offset(x + (barWidth - topWidth) / 2, height - barHeight - 3f),
-                size = Size(topWidth, 3f)
+                size = androidx.compose.ui.geometry.Size(topWidth, 3f)
             )
             
             // Highlight edge
@@ -693,16 +691,6 @@ fun NeonProgressBar(
                             listOf(PhantomCyan, PhantomPurple, PhantomPink)
                         )
                     )
-            )
-            
-            // Progress indicator
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .offset(x = (progress * (size.width - 16.dp.value)).dp - 8.dp, y = (-4).dp)
-                    .clip(CircleShape)
-                    .background(PhantomCyan)
-                    .border(2.dp, PhantomWhite, CircleShape)
             )
         }
         
@@ -859,7 +847,7 @@ fun HolographicPlaybackControls(
     onPrevious: () -> Unit,
     onNext: () -> Unit
 ) {
-    val scale by animateFloatAsState(
+    val scaleAnim by animateFloatAsState(
         targetValue = if (isPlaying) 1.05f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -895,7 +883,7 @@ fun HolographicPlaybackControls(
         // Previous Button
         HolographicButton(
             icon = Icons.Default.SkipPrevious,
-            size = 64.dp,
+            buttonSize = 64.dp,
             iconSize = 32.dp,
             color = PhantomPurple,
             onClick = onPrevious
@@ -903,11 +891,11 @@ fun HolographicPlaybackControls(
         
         // Play/Pause Button - HUGE
         Box(
-            modifier = Modifier.scale(scale)
+            modifier = Modifier.scale(scaleAnim)
         ) {
             HolographicButton(
                 icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                size = 96.dp,
+                buttonSize = 96.dp,
                 iconSize = 48.dp,
                 color = PhantomCyan,
                 onClick = onPlayPause,
@@ -918,7 +906,7 @@ fun HolographicPlaybackControls(
         // Next Button
         HolographicButton(
             icon = Icons.Default.SkipNext,
-            size = 64.dp,
+            buttonSize = 64.dp,
             iconSize = 32.dp,
             color = PhantomPink,
             onClick = onNext
@@ -929,8 +917,8 @@ fun HolographicPlaybackControls(
 @Composable
 fun HolographicButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    size: Dp,
-    iconSize: Dp,
+    buttonSize: androidx.compose.ui.unit.Dp,
+    iconSize: androidx.compose.ui.unit.Dp,
     color: Color,
     onClick: () -> Unit,
     isPrimary: Boolean = false
@@ -946,23 +934,23 @@ fun HolographicButton(
     )
     
     Box(
-        modifier = Modifier.size(size),
+        modifier = Modifier.size(buttonSize),
         contentAlignment = Alignment.Center
     ) {
         // Rotating ring
         Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
             drawCircle(
                 color = color.copy(alpha = 0.3f),
-                radius = size.toPx() / 2,
+                radius = size.minDimension / 2,
                 style = Stroke(width = 2f)
             )
             
             // Scan line effect
-            rotate(degrees = rotation) {
+            androidx.compose.ui.graphics.drawscope.rotate(degrees = rotation) {
                 drawLine(
                     color = color.copy(alpha = 0.5f),
                     start = center,
-                    end = Offset(center.x + size.toPx() / 2, center.y),
+                    end = Offset(center.x + size.minDimension / 2, center.y),
                     strokeWidth = 2f
                 )
             }
@@ -971,7 +959,7 @@ fun HolographicButton(
         // Button core
         Box(
             modifier = Modifier
-                .size(size * 0.85f)
+                .size(buttonSize * 0.85f)
                 .clip(CircleShape)
                 .background(
                     if (isPrimary) {
