@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -946,14 +948,12 @@ fun HolographicButton(
             )
             
             // Scan line effect
-            androidx.compose.ui.graphics.drawscope.rotate(degrees = rotation) {
-                drawLine(
-                    color = color.copy(alpha = 0.5f),
-                    start = center,
-                    end = Offset(center.x + size.minDimension / 2, center.y),
-                    strokeWidth = 2f
-                )
-            }
+            drawLine(
+                color = color.copy(alpha = 0.5f),
+                start = center,
+                end = Offset(center.x + size.minDimension / 2, center.y),
+                strokeWidth = 2f
+            )
         }
         
         // Button core
