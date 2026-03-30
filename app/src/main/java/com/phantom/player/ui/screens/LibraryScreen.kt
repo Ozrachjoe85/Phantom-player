@@ -662,6 +662,3 @@ fun EmptyLibraryState(onScanClick: () -> Unit) {
     }
 }
 
-private fun ColumnScope.spacing(dp: Dp) {
-    Spacer(modifier = Modifier.height(dp))
-}
