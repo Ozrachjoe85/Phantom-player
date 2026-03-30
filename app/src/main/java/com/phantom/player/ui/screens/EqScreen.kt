@@ -134,7 +134,7 @@ fun EqControlPanel(
             .border(
                 1.dp,
                 Brush.horizontalGradient(
-                    listOf(PhantomCyan.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
+                    listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
                 ),
                 RoundedCornerShape(16.dp)
             )
@@ -155,7 +155,7 @@ fun EqControlPanel(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         ),
-                        color = if (isEnabled) PhantomCyan else PhantomWhite.copy(alpha = 0.5f)
+                        color = if (isEnabled) PhantomPurple else PhantomWhite.copy(alpha = 0.5f)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     PowerSwitch(
@@ -166,7 +166,7 @@ fun EqControlPanel(
                 
                 // Reset Button
                 IconButton(onClick = onReset) {
-                    Icon(Icons.Default.Refresh, "Reset", tint = PhantomPink)
+                    Icon(Icons.Default.Refresh, "Reset", tint = PhantomOrange)
                 }
             }
             
@@ -204,7 +204,7 @@ fun EqControlPanel(
                     .background(
                         if (autoEqEnabled) {
                             Brush.horizontalGradient(
-                                listOf(PhantomPurple.copy(alpha = 0.3f), PhantomPink.copy(alpha = 0.3f))
+                                listOf(PhantomPurple.copy(alpha = 0.3f), PhantomOrange.copy(alpha = 0.3f))
                             )
                         } else {
                             Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
@@ -212,7 +212,7 @@ fun EqControlPanel(
                     )
                     .border(
                         1.dp,
-                        if (autoEqEnabled) PhantomPink else PhantomPurple.copy(alpha = 0.3f),
+                        if (autoEqEnabled) PhantomOrange else PhantomPurple.copy(alpha = 0.3f),
                         RoundedCornerShape(12.dp)
                     )
                     .clickable { onAutoEqChange(!autoEqEnabled) }
@@ -224,7 +224,7 @@ fun EqControlPanel(
                     Icon(
                         Icons.Default.AutoAwesome,
                         null,
-                        tint = if (autoEqEnabled) PhantomPink else PhantomPurple,
+                        tint = if (autoEqEnabled) PhantomOrange else PhantomPurple,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -242,7 +242,7 @@ fun EqControlPanel(
                     checked = autoEqEnabled,
                     onCheckedChange = onAutoEqChange,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = PhantomPink,
+                        checkedThumbColor = PhantomOrange,
                         checkedTrackColor = PhantomPurple.copy(alpha = 0.5f),
                         uncheckedThumbColor = PhantomPurple,
                         uncheckedTrackColor = PhantomDarkPurple
@@ -274,8 +274,8 @@ fun PowerSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
                 if (isOn) {
                     Brush.radialGradient(
                         listOf(
-                            PhantomCyan.copy(alpha = glowAlpha),
-                            PhantomCyan.copy(alpha = 0.3f)
+                            PhantomPurple.copy(alpha = glowAlpha),
+                            PhantomPurple.copy(alpha = 0.3f)
                         )
                     )
                 } else {
@@ -287,14 +287,14 @@ fun PowerSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
                     )
                 }
             )
-            .border(2.dp, if (isOn) PhantomCyan else PhantomPurple.copy(alpha = 0.5f), CircleShape)
+            .border(2.dp, if (isOn) PhantomPurple else PhantomPurple.copy(alpha = 0.5f), CircleShape)
             .clickable { onToggle(!isOn) },
         contentAlignment = Alignment.Center
     ) {
         Icon(
             Icons.Default.Power,
             contentDescription = "Power",
-            tint = if (isOn) PhantomCyan else PhantomPurple.copy(alpha = 0.5f),
+            tint = if (isOn) PhantomPurple else PhantomPurple.copy(alpha = 0.5f),
             modifier = Modifier.size(24.dp)
         )
     }
@@ -314,7 +314,7 @@ fun ModeToggleButton(
             .background(
                 if (isSelected) {
                     Brush.horizontalGradient(
-                        listOf(PhantomCyan.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.3f))
+                        listOf(PhantomPurple.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.3f))
                     )
                 } else {
                     Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
@@ -322,7 +322,7 @@ fun ModeToggleButton(
             )
             .border(
                 1.dp,
-                if (isSelected) PhantomCyan else PhantomPurple.copy(alpha = 0.3f),
+                if (isSelected) PhantomPurple else PhantomPurple.copy(alpha = 0.3f),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
@@ -333,7 +333,7 @@ fun ModeToggleButton(
             Icon(
                 icon,
                 null,
-                tint = if (isSelected) PhantomCyan else PhantomPurple,
+                tint = if (isSelected) PhantomPurple else PhantomPurple,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -395,7 +395,7 @@ fun FrequencyCurveView(
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(PhantomBlack)
-            .border(2.dp, EquipmentMetal, RoundedCornerShape(20.dp))
+            .border(2.dp, PhantomDarkPurple, RoundedCornerShape(20.dp))
     ) {
         // Oscilloscope Grid Background
         OscilloscopeGrid()
@@ -404,7 +404,7 @@ fun FrequencyCurveView(
         if (autoEqEnabled) {
             FrequencyCurvePath(
                 bands = bands,
-                color = PhantomPink.copy(alpha = 0.5f),
+                color = PhantomOrange.copy(alpha = 0.5f),
                 isDashed = true,
                 label = "ORIGINAL"
             )
@@ -423,7 +423,7 @@ fun FrequencyCurveView(
         // Current EQ Curve (solid, interactive)
         FrequencyCurvePath(
             bands = animatedBands,
-            color = PhantomCyan,
+            color = PhantomPurple,
             isDashed = false,
             label = "CURRENT EQ",
             onBandValueChange = if (!autoEqEnabled) onBandValueChange else null
@@ -445,7 +445,7 @@ fun BoxScope.OscilloscopeGrid() {
             val y = (height / 4) * i
             val alpha = if (i == 2) 0.4f else 0.15f
             drawLine(
-                color = PhantomCyan.copy(alpha = alpha),
+                color = PhantomPurple.copy(alpha = alpha),
                 start = Offset(0f, y),
                 end = Offset(width, y),
                 strokeWidth = if (i == 2) 2f else 1f,
@@ -609,10 +609,10 @@ fun BoxScope.CurveLegend(autoEqEnabled: Boolean) {
             .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
             .padding(8.dp)
     ) {
-        LegendItem("CURRENT EQ", PhantomCyan, false)
+        LegendItem("CURRENT EQ", PhantomPurple, false)
         if (autoEqEnabled) {
             LegendItem("AUTO TARGET", PhantomPurple, true)
-            LegendItem("ORIGINAL", PhantomPink, true)
+            LegendItem("ORIGINAL", PhantomOrange, true)
         }
     }
 }
@@ -667,7 +667,7 @@ fun FadersView(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(EquipmentMetal, PhantomBlack)
+                    listOf(PhantomDarkPurple, PhantomBlack)
                 )
             )
             .border(2.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
@@ -710,7 +710,7 @@ fun EqFader(
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold
             ),
-            color = PhantomCyan,
+            color = PhantomPurple,
             modifier = Modifier.height(20.dp)
         )
         
@@ -748,7 +748,7 @@ fun EqFader(
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    PhantomCyan.copy(alpha = 0.3f),
+                                    PhantomPurple.copy(alpha = 0.3f),
                                     Color.Transparent
                                 )
                             )
@@ -765,7 +765,7 @@ fun EqFader(
                             Brush.verticalGradient(
                                 listOf(
                                     Color.Transparent,
-                                    PhantomPink.copy(alpha = 0.3f)
+                                    PhantomOrange.copy(alpha = 0.3f)
                                 )
                             )
                         )
@@ -783,12 +783,12 @@ fun EqFader(
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                PhantomCyan.copy(alpha = 0.5f),
+                                PhantomPurple.copy(alpha = 0.5f),
                                 PhantomPurple.copy(alpha = 0.5f)
                             )
                         )
                     )
-                    .border(1.dp, PhantomCyan, RoundedCornerShape(4.dp))
+                    .border(1.dp, PhantomPurple, RoundedCornerShape(4.dp))
                     .pointerInput(Unit) {
                         if (!autoEqEnabled) {
                             detectDragGestures { change, dragAmount ->
@@ -803,7 +803,7 @@ fun EqFader(
                     modifier = Modifier
                         .width(16.dp)
                         .height(3.dp)
-                        .background(PhantomCyan)
+                        .background(PhantomPurple)
                 )
             }
         }
@@ -831,7 +831,7 @@ fun EqPresetPanel(viewModel: EqViewModel) {
             .fillMaxWidth()
             .padding(16.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(EquipmentMetal)
+            .background(PhantomDarkPurple)
             .border(1.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .padding(16.dp)
     ) {
@@ -842,7 +842,7 @@ fun EqPresetPanel(viewModel: EqViewModel) {
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = PhantomCyan,
+                color = PhantomPurple,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             
@@ -890,7 +890,7 @@ fun PresetButton(
                 Brush.horizontalGradient(
                     listOf(
                         PhantomDarkPurple.copy(alpha = 0.5f),
-                        PhantomMidPurple.copy(alpha = 0.3f)
+                        PhantomDarkPurple.copy(alpha = 0.3f)
                     )
                 )
             )
@@ -923,7 +923,7 @@ fun InitializingEqState() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(
-                color = PhantomCyan,
+                color = PhantomPurple,
                 strokeWidth = 3.dp
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -933,7 +933,7 @@ fun InitializingEqState() {
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = PhantomCyan.copy(alpha = 0.7f)
+                color = PhantomPurple.copy(alpha = 0.7f)
             )
         }
     }
