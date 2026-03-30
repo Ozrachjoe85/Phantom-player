@@ -234,7 +234,7 @@ fun AppInfoHeader() {
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        PhantomCyan.copy(alpha = 0.2f),
+                        PhantomPurple.copy(alpha = 0.2f),
                         PhantomPurple.copy(alpha = 0.1f),
                         Color.Transparent
                     )
@@ -243,7 +243,7 @@ fun AppInfoHeader() {
             .border(
                 2.dp,
                 Brush.linearGradient(
-                    listOf(PhantomCyan.copy(alpha = 0.6f), PhantomPurple.copy(alpha = 0.4f))
+                    listOf(PhantomPurple.copy(alpha = 0.6f), PhantomPurple.copy(alpha = 0.4f))
                 ),
                 RoundedCornerShape(20.dp)
             )
@@ -260,10 +260,10 @@ fun AppInfoHeader() {
                     .clip(RoundedCornerShape(20.dp))
                     .background(
                         Brush.radialGradient(
-                            listOf(PhantomCyan, PhantomPurple)
+                            listOf(PhantomPurple, PhantomPurple)
                         )
                     )
-                    .border(3.dp, PhantomCyan, RoundedCornerShape(20.dp)),
+                    .border(3.dp, PhantomPurple, RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -282,7 +282,7 @@ fun AppInfoHeader() {
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 3.sp
                 ),
-                color = PhantomCyan
+                color = PhantomPurple
             )
             
             Text(
@@ -319,7 +319,7 @@ fun SettingsSection(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp
             ),
-            color = PhantomCyan,
+            color = PhantomPurple,
             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
         
@@ -366,7 +366,7 @@ fun SettingToggle(
                 if (checked) {
                     Brush.horizontalGradient(
                         listOf(
-                            PhantomCyan.copy(alpha = 0.15f),
+                            PhantomPurple.copy(alpha = 0.15f),
                             PhantomPurple.copy(alpha = 0.1f)
                         )
                     )
@@ -384,7 +384,7 @@ fun SettingToggle(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (checked) PhantomCyan else PhantomPurple.copy(alpha = 0.6f),
+                tint = if (checked) PhantomPurple else PhantomPurple.copy(alpha = 0.6f),
                 modifier = Modifier.size(24.dp)
             )
             
@@ -412,7 +412,7 @@ fun SettingToggle(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = PhantomCyan,
+                    checkedThumbColor = PhantomPurple,
                     checkedTrackColor = PhantomPurple.copy(alpha = 0.5f),
                     uncheckedThumbColor = PhantomPurple.copy(alpha = 0.6f),
                     uncheckedTrackColor = PhantomDarkPurple
@@ -473,7 +473,7 @@ fun SettingSlider(
                         style = MaterialTheme.typography.bodySmall.copy(
                             letterSpacing = 0.3.sp
                         ),
-                        color = PhantomCyan
+                        color = PhantomPurple
                     )
                 }
             }
@@ -485,8 +485,8 @@ fun SettingSlider(
                 onValueChange = onValueChange,
                 valueRange = valueRange,
                 colors = SliderDefaults.colors(
-                    thumbColor = PhantomCyan,
-                    activeTrackColor = PhantomCyan,
+                    thumbColor = PhantomPurple,
+                    activeTrackColor = PhantomPurple,
                     inactiveTrackColor = PhantomPurple.copy(alpha = 0.3f)
                 ),
                 modifier = Modifier
@@ -513,7 +513,7 @@ fun SettingButton(
                 if (isDestructive) {
                     Brush.horizontalGradient(
                         listOf(
-                            PhantomPink.copy(alpha = 0.1f),
+                            PhantomOrange.copy(alpha = 0.1f),
                             Color.Transparent
                         )
                     )
@@ -532,7 +532,7 @@ fun SettingButton(
                 icon,
                 contentDescription = null,
                 tint = if (isDestructive) {
-                    PhantomPink.copy(alpha = 0.8f)
+                    PhantomOrange.copy(alpha = 0.8f)
                 } else {
                     PhantomPurple.copy(alpha = 0.6f)
                 },
@@ -548,7 +548,7 @@ fun SettingButton(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
-                    color = if (isDestructive) PhantomPink else PhantomWhite
+                    color = if (isDestructive) PhantomOrange else PhantomWhite
                 )
                 Text(
                     description,
