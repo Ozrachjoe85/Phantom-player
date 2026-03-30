@@ -68,7 +68,7 @@ fun LibraryScreen(
             
             // Scan Status Banner
             if (isScanning) {
-             ScanStatusBanner(progress = 0.5f)  // or just show a spinner without progress
+                ScanStatusBanner()
             }
             
             // Content based on view mode
@@ -85,8 +85,7 @@ fun LibraryScreen(
                                     it.artist.contains(searchQuery, ignoreCase = true)
                                 },
                                 onSongClick = { song -> 
-    // PlayerViewModel doesn't have playSong method yet
-    // For now just do nothing or use what's available
+                                    // TODO: Implement playSong in PlayerViewModel
                                 }
                             )
                         }
@@ -277,7 +276,7 @@ fun ViewModePill(
 }
 
 @Composable
-fun ScanStatusBanner(progress: Float) {
+fun ScanStatusBanner() {
     val infiniteTransition = rememberInfiniteTransition(label = "scan")
     val offset by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -335,18 +334,17 @@ fun ScanStatusBanner(progress: Float) {
                     color = PhantomCyan
                 )
                 Text(
-                    "${(progress * 100).toInt()}% complete",
+                    "Searching for music files",
                     style = MaterialTheme.typography.bodySmall,
                     color = PhantomPurple
                 )
             }
             
             CircularProgressIndicator(
-    progress = progress,
-    modifier = Modifier.size(32.dp),
-    color = PhantomCyan,
-    strokeWidth = 3.dp
-)
+                modifier = Modifier.size(32.dp),
+                color = PhantomCyan,
+                strokeWidth = 3.dp
+            )
         }
     }
 }
