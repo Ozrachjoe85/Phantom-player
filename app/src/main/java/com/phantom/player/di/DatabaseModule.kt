@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.phantom.player.data.local.database.AppDatabase
 import com.phantom.player.data.local.database.dao.EqPresetDao
-import com.phantom.player.data.local.database.dao.PlaylistDao
 import com.phantom.player.data.local.database.dao.SongDao
+import com.phantom.player.data.local.database.dao.SongEqProfileDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,15 +37,22 @@ object DatabaseModule {
         return database.songDao()
     }
     
-    @Provides
-    @Singleton
-    fun providePlaylistDao(database: AppDatabase): PlaylistDao {
-        return database.playlistDao()
-    }
+    // Removed playlistDao - not implemented yet
+    // @Provides
+    // @Singleton
+    // fun providePlaylistDao(database: AppDatabase): PlaylistDao {
+    //     return database.playlistDao()
+    // }
     
     @Provides
     @Singleton
     fun provideEqPresetDao(database: AppDatabase): EqPresetDao {
         return database.eqPresetDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSongEqProfileDao(database: AppDatabase): SongEqProfileDao {
+        return database.songEqProfileDao()
     }
 }
