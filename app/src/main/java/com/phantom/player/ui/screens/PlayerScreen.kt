@@ -438,7 +438,7 @@ fun ProgressBarWithSeek(
             .padding(16.dp)
     ) {
         // Seekable progress bar
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(12.dp)
@@ -461,6 +461,8 @@ fun ProgressBarWithSeek(
                     // Allow clicking to seek as well
                 }
         ) {
+            val boxWidth = maxWidth
+            
             // Glow effect
             Box(
                 modifier = Modifier
@@ -488,10 +490,11 @@ fun ProgressBarWithSeek(
             
             // Seek thumb
             if (isDragging || progress > 0f) {
-                val thumbOffset = (if (isDragging) dragProgress else progress) * size.width.toFloat()
+                val thumbProgress = if (isDragging) dragProgress else progress
+                val thumbOffset = thumbProgress * boxWidth - 10.dp
                 Box(
                     modifier = Modifier
-                        .offset(x = thumbOffset.dp - 10.dp)
+                        .offset(x = thumbOffset.coerceAtLeast(0.dp))
                         .size(20.dp)
                         .align(Alignment.CenterStart)
                         .clip(CircleShape)
