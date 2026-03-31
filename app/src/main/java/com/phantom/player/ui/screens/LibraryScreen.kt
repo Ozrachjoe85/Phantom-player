@@ -34,6 +34,13 @@ import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.LibraryViewModel
 import com.phantom.player.ui.viewmodel.PlayerViewModel
 
+enum class SortOption {
+    TITLE_ASC, TITLE_DESC,
+    ARTIST_ASC, ARTIST_DESC,
+    DATE_ADDED_ASC, DATE_ADDED_DESC,
+    DURATION_ASC, DURATION_DESC
+}
+
 @Composable
 fun LibraryScreen(
     libraryViewModel: LibraryViewModel = hiltViewModel(),
@@ -43,6 +50,8 @@ fun LibraryScreen(
     val isScanning by libraryViewModel.isScanning.collectAsState()
     val currentSong by playerViewModel.currentSong.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var sortOption by remember { mutableStateOf(SortOption.DATE_ADDED_DESC) }
+    var showSortMenu by remember { mutableStateOf(false) }
     
     Box(
         modifier = Modifier
@@ -50,12 +59,14 @@ fun LibraryScreen(
             .background(PhantomBlack)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header with Search
+            // Header with Search and Sort
             LibraryHeader(
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 onScanLibrary = { libraryViewModel.scanLibrary() },
-                songCount = songs.size
+                songCount = songs.size,
+                sortOption = sortOption,
+                onSortClick = { showSortMenu = true }
             )
             
             // Scan Status Banner
@@ -69,22 +80,47 @@ fun LibraryScreen(
                     EmptyLibraryState(onScanClick = { libraryViewModel.scanLibrary() })
                 }
                 else -> {
-                    val filteredSongs = songs.filter {
-                        it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.artist.contains(searchQuery, ignoreCase = true) ||
-                        it.album.contains(searchQuery, ignoreCase = true)
-                    }
+                    val filteredAndSortedSongs = songs
+                        .filter {
+                            it.title.contains(searchQuery, ignoreCase = true) ||
+                            it.artist.contains(searchQuery, ignoreCase = true) ||
+                            it.album.contains(searchQuery, ignoreCase = true)
+                        }
+                        .let { list ->
+                            when (sortOption) {
+                                SortOption.TITLE_ASC -> list.sortedBy { it.title.lowercase() }
+                                SortOption.TITLE_DESC -> list.sortedByDescending { it.title.lowercase() }
+                                SortOption.ARTIST_ASC -> list.sortedBy { it.artist.lowercase() }
+                                SortOption.ARTIST_DESC -> list.sortedByDescending { it.artist.lowercase() }
+                                SortOption.DATE_ADDED_ASC -> list.sortedBy { it.dateAdded }
+                                SortOption.DATE_ADDED_DESC -> list.sortedByDescending { it.dateAdded }
+                                SortOption.DURATION_ASC -> list.sortedBy { it.duration }
+                                SortOption.DURATION_DESC -> list.sortedByDescending { it.duration }
+                            }
+                        }
                     
                     SongsListView(
-                        songs = filteredSongs,
+                        songs = filteredAndSortedSongs,
                         currentSong = currentSong,
                         onSongClick = { song, index ->
-                            playerViewModel.setPlaylist(filteredSongs, index)
+                            playerViewModel.setPlaylist(filteredAndSortedSongs, index)
                             playerViewModel.play(song)
                         }
                     )
                 }
             }
+        }
+        
+        // Sort Menu Dropdown
+        if (showSortMenu) {
+            SortMenuDialog(
+                currentSort = sortOption,
+                onSortSelected = { 
+                    sortOption = it
+                    showSortMenu = false
+                },
+                onDismiss = { showSortMenu = false }
+            )
         }
     }
 }
@@ -94,7 +130,9 @@ fun LibraryHeader(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onScanLibrary: () -> Unit,
-    songCount: Int
+    songCount: Int,
+    sortOption: SortOption,
+    onSortClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -119,7 +157,7 @@ fun LibraryHeader(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Title and Scan Button
+        // Title Row with Scan and Sort
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,7 +173,7 @@ fun LibraryHeader(
                     color = PhantomPurple
                 )
                 Text(
-                    "$songCount TRACKS",
+                    "$songCount TRACKS • ${sortOption.displayName()}",
                     style = MaterialTheme.typography.bodySmall.copy(
                         letterSpacing = 1.sp
                     ),
@@ -143,23 +181,48 @@ fun LibraryHeader(
                 )
             }
             
-            IconButton(
-                onClick = onScanLibrary,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(PhantomOrange.copy(alpha = 0.3f), Color.Transparent)
-                        )
-                    )
-                    .border(1.dp, PhantomOrange, CircleShape)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = "Scan Library",
-                    tint = PhantomOrange
-                )
+                // Sort button
+                IconButton(
+                    onClick = onSortClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(PhantomGreen.copy(alpha = 0.3f), Color.Transparent)
+                            )
+                        )
+                        .border(1.dp, PhantomGreen, CircleShape)
+                ) {
+                    Icon(
+                        Icons.Default.Sort,
+                        contentDescription = "Sort",
+                        tint = PhantomGreen
+                    )
+                }
+                
+                // Scan button
+                IconButton(
+                    onClick = onScanLibrary,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(PhantomOrange.copy(alpha = 0.3f), Color.Transparent)
+                            )
+                        )
+                        .border(1.dp, PhantomOrange, CircleShape)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Scan Library",
+                        tint = PhantomOrange
+                    )
+                }
             }
         }
         
@@ -198,6 +261,105 @@ fun LibraryHeader(
 }
 
 @Composable
+fun SortMenuDialog(
+    currentSort: SortOption,
+    onSortSelected: (SortOption) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(PhantomDarkPurple)
+                .border(2.dp, PhantomPurple, RoundedCornerShape(16.dp))
+                .padding(16.dp)
+                .clickable(onClick = {}) // Prevent click-through
+        ) {
+            Text(
+                "SORT BY",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = PhantomPurple,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            SortOption.values().forEach { option ->
+                SortMenuItem(
+                    label = option.displayName(),
+                    isSelected = option == currentSort,
+                    onClick = { onSortSelected(option) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SortMenuItem(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isSelected) {
+                    Brush.horizontalGradient(
+                        listOf(PhantomPurple.copy(alpha = 0.3f), PhantomGreen.copy(alpha = 0.3f))
+                    )
+                } else {
+                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isSelected) {
+            Icon(
+                Icons.Default.Check,
+                contentDescription = null,
+                tint = PhantomGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+        } else {
+            Spacer(modifier = Modifier.width(32.dp))
+        }
+        
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            ),
+            color = if (isSelected) PhantomGreen else PhantomWhite
+        )
+    }
+}
+
+fun SortOption.displayName(): String = when (this) {
+    SortOption.TITLE_ASC -> "Title (A-Z)"
+    SortOption.TITLE_DESC -> "Title (Z-A)"
+    SortOption.ARTIST_ASC -> "Artist (A-Z)"
+    SortOption.ARTIST_DESC -> "Artist (Z-A)"
+    SortOption.DATE_ADDED_ASC -> "Date Added (Oldest First)"
+    SortOption.DATE_ADDED_DESC -> "Date Added (Newest First)"
+    SortOption.DURATION_ASC -> "Duration (Shortest First)"
+    SortOption.DURATION_DESC -> "Duration (Longest First)"
+}
+
+@Composable
 fun ScanStatusBanner() {
     val infiniteTransition = rememberInfiniteTransition(label = "scan")
     val offset by infiniteTransition.animateFloat(
@@ -231,7 +393,6 @@ fun ScanStatusBanner() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Animated scanning icon
             Canvas(modifier = Modifier.size(24.dp).rotate(offset * 360f)) {
                 drawCircle(
                     color = PhantomPurple,
@@ -383,7 +544,6 @@ fun SongListItem(
                 )
             }
             
-            // Now Playing Indicator
             if (isPlaying) {
                 Box(
                     modifier = Modifier
@@ -450,7 +610,7 @@ fun SongListItem(
             
             if (isPlaying) {
                 Text(
-                    text = "• NOW PLAYING •",
+                    text = "• PLAYING •",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -474,7 +634,6 @@ fun EmptyLibraryState(onScanClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Animated radar icon
             val infiniteTransition = rememberInfiniteTransition(label = "empty")
             val rotation by infiniteTransition.animateFloat(
                 initialValue = 0f,
@@ -522,7 +681,6 @@ fun EmptyLibraryState(onScanClick: () -> Unit) {
                 color = PhantomGreen
             )
             
-            // Scan Button
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
