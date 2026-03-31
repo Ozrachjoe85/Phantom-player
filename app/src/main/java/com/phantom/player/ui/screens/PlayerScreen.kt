@@ -488,9 +488,10 @@ fun ProgressBarWithSeek(
             
             // Seek thumb
             if (isDragging || progress > 0f) {
+                val thumbOffset = (if (isDragging) dragProgress else progress) * size.width.toFloat()
                 Box(
                     modifier = Modifier
-                        .offset(x = ((if (isDragging) dragProgress else progress) * size.width).dp - 10.dp)
+                        .offset(x = thumbOffset.dp - 10.dp)
                         .size(20.dp)
                         .align(Alignment.CenterStart)
                         .clip(CircleShape)
