@@ -5,7 +5,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,13 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,7 +33,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.PlayerViewModel
-import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -51,156 +48,97 @@ fun PlayerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhantomBlack)
+            .background(Color(0xFF0A0A0A))
     ) {
-        // Animated Background with Radial Pulses
-        AnimatedBackgroundEffects(isPlaying = isPlaying)
-        
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Top Spectrum Analyzer
-            TopSpectrumBar(isPlaying = isPlaying)
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Massive Album Art Display
-            MassiveAlbumArtDisplay(
-                albumArtPath = currentSong?.albumArtPath,
-                isPlaying = isPlaying
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Track Info Panel
-            TrackInfoPanel(
-                title = currentSong?.title ?: "No Track Playing",
-                artist = currentSong?.artist ?: "Unknown Artist",
-                album = currentSong?.album ?: "Unknown Album"
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Rainbow Waveform Visualizer
-            RainbowWaveformVisualizer(isPlaying = isPlaying)
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            // Progress Bar with Seek
-            ProgressBarWithSeek(
-                currentPosition = currentPosition,
-                duration = duration,
-                onSeek = { viewModel.seekTo(it) }
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Main Playback Controls
-            MassivePlaybackControls(
-                isPlaying = isPlaying,
-                onPlayPause = { viewModel.togglePlayPause() },
-                onPrevious = { viewModel.skipToPrevious() },
-                onNext = { viewModel.skipToNext() }
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Bottom Control Row
-            BottomControlRow(
-                isFavorite = currentSong?.isFavorite ?: false,
-                onFavoriteToggle = {
-                    currentSong?.let { song ->
-                        viewModel.toggleFavorite(song.id, !song.isFavorite)
-                    }
-                },
-                onShuffleToggle = { viewModel.setShuffleMode(true) },
-                onRepeatToggle = { viewModel.setRepeatMode(1) }
-            )
+            // Top Status Bar with Spectrum
+            TopStatusBar(isPlaying = isPlaying)
             
             Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-fun AnimatedBackgroundEffects(isPlaying: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "bg")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "bg_rotation"
-    )
-    
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "bg_scale"
-    )
-    
-    if (isPlaying) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Multiple pulsing circles
-            repeat(3) { index ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset(y = (index * 100).dp)
-                        .scale(scale * (1f + index * 0.1f))
-                        .blur(80.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    when (index % 3) {
-                                        0 -> PhantomPurple.copy(alpha = 0.15f)
-                                        1 -> PhantomGreen.copy(alpha = 0.15f)
-                                        else -> PhantomOrange.copy(alpha = 0.15f)
-                                    },
-                                    Color.Transparent
-                                )
-                            )
-                        )
+            
+            // Main Content Area
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // MASSIVE Circular Album Art with Rings
+                    CircularAlbumArtDisplay(
+                        albumArtPath = currentSong?.albumArtPath,
+                        isPlaying = isPlaying,
+                        trackTitle = currentSong?.title ?: "NO TRACK",
+                        artist = currentSong?.artist ?: "",
+                        album = currentSong?.album ?: "",
+                        currentPosition = currentPosition,
+                        duration = duration
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Rainbow Waveform Visualizer
+                    RainbowWaveformDisplay(isPlaying = isPlaying)
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            
+            // Bottom Controls Section
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Circular Playback Controls
+                CircularPlaybackControls(
+                    isPlaying = isPlaying,
+                    onPlayPause = { viewModel.togglePlayPause() },
+                    onPrevious = { viewModel.skipToPrevious() },
+                    onNext = { viewModel.skipToNext() }
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Audio Info Bar
+                AudioInfoBar()
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Bottom Rainbow Waveform
+                BottomRainbowWaveform(isPlaying = isPlaying)
+                
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 }
 
 @Composable
-fun TopSpectrumBar(isPlaying: Boolean) {
-    val bars = remember { List(32) { mutableStateOf(Random.nextFloat()) } }
+fun TopStatusBar(isPlaying: Boolean) {
+    val bars = remember { List(40) { mutableStateOf(Random.nextFloat()) } }
     
     LaunchedEffect(isPlaying) {
         if (isPlaying) {
             while (true) {
-                bars.forEach { it.value = Random.nextFloat() * 0.8f + 0.2f }
+                bars.forEach { it.value = Random.nextFloat() * 0.9f + 0.1f }
                 kotlinx.coroutines.delay(50)
             }
         } else {
-            bars.forEach { it.value = 0f }
+            bars.forEach { it.value = 0.1f }
         }
     }
     
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(PhantomBlack)
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .height(60.dp)
+            .background(Color(0xFF0A0A0A))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         val width = size.width
         val height = size.height
@@ -211,11 +149,12 @@ fun TopSpectrumBar(isPlaying: Boolean) {
             val barHeight = heightState.value * height
             val x = index * spacing
             
-            // Color gradient based on height
+            // Rainbow gradient
+            val hue = (index.toFloat() / bars.size) * 360f
             val color = when {
-                heightState.value > 0.7f -> PhantomOrange
-                heightState.value > 0.4f -> PhantomPurple
-                else -> PhantomGreen
+                index % 3 == 0 -> Color(0xFFFF6B00) // Orange
+                index % 3 == 1 -> Color(0xFF9D00FF) // Purple
+                else -> Color(0xFF00FF41) // Green
             }
             
             drawRect(
@@ -228,68 +167,108 @@ fun TopSpectrumBar(isPlaying: Boolean) {
 }
 
 @Composable
-fun MassiveAlbumArtDisplay(
+fun CircularAlbumArtDisplay(
     albumArtPath: String?,
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    trackTitle: String,
+    artist: String,
+    album: String,
+    currentPosition: Long,
+    duration: Long
 ) {
-    val rotation by rememberInfiniteTransition(label = "art_rotation").animateFloat(
+    val rotation by rememberInfiniteTransition(label = "rotation").animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(30000, easing = LinearEasing),
+            animation = tween(20000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation"
     )
     
+    val pulseScale by rememberInfiniteTransition(label = "pulse").animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+    
     Box(
         modifier = Modifier
-            .size(280.dp),
+            .size(340.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Rotating outer ring
+        // Outer rotating rings
         if (isPlaying) {
-            Canvas(modifier = Modifier.size(300.dp).rotate(rotation)) {
+            Canvas(modifier = Modifier.size(360.dp).rotate(rotation)) {
+                val center = Offset(size.width / 2, size.height / 2)
+                
+                // Rainbow outer ring
                 drawCircle(
                     brush = Brush.sweepGradient(
                         listOf(
-                            PhantomPurple,
-                            PhantomGreen,
-                            PhantomOrange,
-                            PhantomPurple
+                            Color(0xFFFF6B00),
+                            Color(0xFF9D00FF),
+                            Color(0xFF00FF41),
+                            Color(0xFF00E5FF),
+                            Color(0xFFFF6B00)
                         )
                     ),
                     radius = size.minDimension / 2,
+                    center = center,
+                    style = Stroke(width = 8f)
+                )
+                
+                // Middle ring
+                drawCircle(
+                    brush = Brush.sweepGradient(
+                        listOf(
+                            Color(0xFF00FF41),
+                            Color(0xFF9D00FF),
+                            Color(0xFFFF6B00),
+                            Color(0xFF00FF41)
+                        )
+                    ),
+                    radius = size.minDimension / 2 - 15f,
+                    center = center,
                     style = Stroke(width = 4f)
                 )
             }
         }
         
-        // Album art container
+        // Main album art circle
         Box(
             modifier = Modifier
-                .size(260.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(300.dp)
+                .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        listOf(PhantomDarkPurple, PhantomBlack)
+                        listOf(
+                            Color(0xFF1A0A2E),
+                            Color(0xFF0A0A0A)
+                        )
                     )
                 )
                 .border(
-                    2.dp,
-                    if (isPlaying) {
-                        Brush.linearGradient(listOf(PhantomPurple, PhantomGreen, PhantomOrange))
-                    } else {
-                        Brush.linearGradient(listOf(PhantomPurple.copy(alpha = 0.3f), Color.Transparent))
-                    },
-                    RoundedCornerShape(16.dp)
+                    3.dp,
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0xFF9D00FF),
+                            Color(0xFF00FF41),
+                            Color(0xFFFF6B00)
+                        )
+                    ),
+                    CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
             if (albumArtPath != null) {
                 AsyncImage(
                     model = albumArtPath,
-                    contentDescription = "Album Art",
+                    contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -297,8 +276,75 @@ fun MassiveAlbumArtDisplay(
                 Icon(
                     Icons.Default.MusicNote,
                     contentDescription = null,
-                    modifier = Modifier.size(100.dp),
-                    tint = PhantomPurple.copy(alpha = 0.3f)
+                    modifier = Modifier.size(120.dp),
+                    tint = Color(0xFF9D00FF).copy(alpha = 0.3f)
+                )
+            }
+            
+            // Track info overlay at bottom
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color(0xDD000000)
+                            )
+                        )
+                    )
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = trackTitle,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp,
+                        color = Color(0xFFFF6B00)
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                if (artist.isNotEmpty()) {
+                    Text(
+                        text = artist.uppercase(),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 1.sp,
+                            color = Color(0xFF00FF41)
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        
+        // Center time display
+        if (duration > 0) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = formatTime(currentPosition),
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00E5FF),
+                        fontSize = 48.sp,
+                        letterSpacing = 2.sp
+                    )
+                )
+                
+                Text(
+                    text = formatTime(duration),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = Color(0xFF9D00FF).copy(alpha = 0.7f),
+                        letterSpacing = 1.sp
+                    )
                 )
             }
         }
@@ -306,70 +352,234 @@ fun MassiveAlbumArtDisplay(
 }
 
 @Composable
-fun TrackInfoPanel(
-    title: String,
-    artist: String,
-    album: String
-) {
-    Column(
+fun RainbowWaveformDisplay(isPlaying: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "waveform")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wave_progress"
+    )
+    
+    Canvas(
         modifier = Modifier
             .fillMaxWidth()
+            .height(80.dp)
+            .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF0A0A0A))
+            .border(2.dp, Color(0xFF9D00FF).copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(12.dp)
+    ) {
+        if (isPlaying) {
+            val width = size.width
+            val height = size.height
+            val centerY = height / 2
+            val points = 150
+            
+            for (i in 0 until points) {
+                val x = (i.toFloat() / points) * width
+                val wave = sin((i + progress * 50) * 0.3).toFloat() * height * 0.35f
+                
+                val hue = (i.toFloat() / points) * 360f
+                val color = when {
+                    i % 4 == 0 -> Color(0xFFFF0000) // Red
+                    i % 4 == 1 -> Color(0xFFFF6B00) // Orange
+                    i % 4 == 2 -> Color(0xFFFFFF00) // Yellow
+                    else -> Color(0xFF00FF00) // Green-ish
+                }
+                
+                drawLine(
+                    color = color.copy(alpha = 0.8f),
+                    start = Offset(x, centerY - wave),
+                    end = Offset(x, centerY + wave),
+                    strokeWidth = 2f,
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CircularPlaybackControls(
+    isPlaying: Boolean,
+    onPlayPause: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        SurfaceGlass.copy(alpha = 0.4f),
-                        SurfaceGlass.copy(alpha = 0.2f),
-                        SurfaceGlass.copy(alpha = 0.4f)
+                        Color(0xFF1A0A2E),
+                        Color(0xFF0A0A0A),
+                        Color(0xFF1A0A2E)
                     )
                 )
             )
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .border(
+                3.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF9D00FF),
+                        Color(0xFF00FF41),
+                        Color(0xFFFF6B00),
+                        Color(0xFF9D00FF)
+                    )
+                ),
+                RoundedCornerShape(20.dp)
+            )
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Previous button
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                Color(0xFF9D00FF).copy(alpha = 0.4f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .border(3.dp, Color(0xFF9D00FF), CircleShape)
+                    .clickable(onClick = onPrevious),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.SkipPrevious,
+                    contentDescription = "Previous",
+                    tint = Color(0xFF9D00FF),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+            
+            // MASSIVE Play/Pause button
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            if (isPlaying) {
+                                listOf(
+                                    Color(0xFF00FF41),
+                                    Color(0xFF00FF41).copy(alpha = 0.6f)
+                                )
+                            } else {
+                                listOf(
+                                    Color(0xFFFF6B00),
+                                    Color(0xFFFF6B00).copy(alpha = 0.6f)
+                                )
+                            }
+                        )
+                    )
+                    .border(
+                        4.dp,
+                        if (isPlaying) Color(0xFF00FF41) else Color(0xFFFF6B00),
+                        CircleShape
+                    )
+                    .clickable(onClick = onPlayPause),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = Color(0xFF0A0A0A),
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+            
+            // Next button
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                Color(0xFFFF6B00).copy(alpha = 0.4f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .border(3.dp, Color(0xFFFF6B00), CircleShape)
+                    .clickable(onClick = onNext),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.SkipNext,
+                    contentDescription = "Next",
+                    tint = Color(0xFFFF6B00),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AudioInfoBar() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF1A0A2E))
+            .border(1.dp, Color(0xFF9D00FF).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.titleLarge.copy(
+            text = "F# FLAC / 24 BIT / 6 KHZ",
+            style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp
-            ),
-            color = PhantomPurple,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
+                letterSpacing = 1.sp,
+                color = Color(0xFF00FF41)
+            )
         )
         
-        Spacer(modifier = Modifier.height(4.dp))
-        
         Text(
-            text = artist.uppercase(),
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp
-            ),
-            color = PhantomGreen,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
+            text = "□ BASS BOOST",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = Color(0xFFFF6B00)
+            )
         )
         
-        Spacer(modifier = Modifier.height(4.dp))
-        
         Text(
-            text = album,
-            style = MaterialTheme.typography.bodyMedium,
-            color = PhantomWhite.copy(alpha = 0.6f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
+            text = ")› DAC ENABLED",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = Color(0xFF00E5FF)
+            )
         )
     }
 }
 
 @Composable
-fun RainbowWaveformVisualizer(isPlaying: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "waveform")
+fun BottomRainbowWaveform(isPlaying: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "bottom_wave")
     val progress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
@@ -383,322 +593,50 @@ fun RainbowWaveformVisualizer(isPlaying: Boolean) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(PhantomBlack)
-            .border(1.dp, PhantomGreen.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .height(100.dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF0A0A0A))
+            .border(2.dp, Color(0xFFFF6B00).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .padding(12.dp)
     ) {
         if (isPlaying) {
             val width = size.width
             val height = size.height
             val centerY = height / 2
-            val points = 120
+            val points = 200
+            
+            val path = Path()
+            path.moveTo(0f, centerY)
             
             for (i in 0 until points) {
                 val x = (i.toFloat() / points) * width
-                val wave = sin((i + progress * 30) * 0.4).toFloat() * height * 0.4f
+                val wave = sin((i + progress * 60) * 0.25).toFloat() * height * 0.4f
                 
-                // Rainbow gradient based on position
-                val hue = (i.toFloat() / points) * 360f
-                val color = when {
-                    i % 3 == 0 -> PhantomPurple
-                    i % 3 == 1 -> PhantomGreen
-                    else -> PhantomOrange
+                if (i == 0) {
+                    path.moveTo(x, centerY + wave)
+                } else {
+                    path.lineTo(x, centerY + wave)
                 }
-                
-                drawLine(
-                    color = color.copy(alpha = 0.7f),
-                    start = Offset(x, centerY - wave),
-                    end = Offset(x, centerY + wave),
-                    strokeWidth = 2.5f,
-                    cap = StrokeCap.Round
-                )
             }
-        }
-    }
-}
-
-@Composable
-fun ProgressBarWithSeek(
-    currentPosition: Long,
-    duration: Long,
-    onSeek: (Long) -> Unit
-) {
-    val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
-    var isDragging by remember { mutableStateOf(false) }
-    var dragProgress by remember { mutableStateOf(progress) }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(SurfaceGlass.copy(alpha = 0.3f))
-            .border(1.dp, PhantomOrange.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    ) {
-        // Seekable progress bar
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(PhantomDarkPurple)
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragStart = { isDragging = true },
-                        onDragEnd = {
-                            isDragging = false
-                            onSeek((dragProgress * duration).toLong())
-                        },
-                        onDragCancel = { isDragging = false },
-                        onHorizontalDrag = { _, dragAmount ->
-                            dragProgress = (dragProgress + dragAmount / size.width).coerceIn(0f, 1f)
-                        }
-                    )
-                }
-                .clickable {
-                    // Allow clicking to seek as well
-                }
-        ) {
-            val boxWidth = maxWidth
             
-            // Glow effect
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (isDragging) dragProgress else progress)
-                    .fillMaxHeight()
-                    .blur(6.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(PhantomPurple, PhantomGreen, PhantomOrange)
-                        )
-                    )
+            // Draw filled gradient waveform
+            val colors = listOf(
+                Color(0xFFFF0000),
+                Color(0xFFFF6B00),
+                Color(0xFFFFFF00),
+                Color(0xFF00FF00),
+                Color(0xFF00FFFF),
+                Color(0xFF0000FF),
+                Color(0xFFFF00FF),
+                Color(0xFFFF0000)
             )
             
-            // Solid progress
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(if (isDragging) dragProgress else progress)
-                    .fillMaxHeight()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(PhantomPurple, PhantomGreen, PhantomOrange)
-                        )
-                    )
+            drawPath(
+                path = path,
+                brush = Brush.horizontalGradient(colors),
+                style = Stroke(width = 3f, cap = StrokeCap.Round)
             )
-            
-            // Seek thumb
-            if (isDragging || progress > 0f) {
-                val thumbProgress = if (isDragging) dragProgress else progress
-                val thumbOffset = (boxWidth.value * thumbProgress - 10f).dp
-                Box(
-                    modifier = Modifier
-                        .offset(x = thumbOffset.coerceAtLeast(0.dp))
-                        .size(20.dp)
-                        .align(Alignment.CenterStart)
-                        .clip(CircleShape)
-                        .background(PhantomGreen)
-                        .border(2.dp, PhantomWhite, CircleShape)
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // Time labels
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = formatTime(currentPosition),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomGreen
-            )
-            Text(
-                text = formatTime(duration),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomOrange
-            )
-        }
-    }
-}
-
-@Composable
-fun MassivePlaybackControls(
-    isPlaying: Boolean,
-    onPlayPause: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit
-) {
-    val scaleAnim by animateFloatAsState(
-        targetValue = if (isPlaying) 1.05f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "play_scale"
-    )
-    
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        SurfaceGlass.copy(alpha = 0.5f),
-                        SurfaceGlass.copy(alpha = 0.3f),
-                        SurfaceGlass.copy(alpha = 0.5f)
-                    )
-                )
-            )
-            .border(
-                2.dp,
-                Brush.horizontalGradient(
-                    listOf(PhantomPurple, PhantomGreen, PhantomOrange, PhantomPurple)
-                ),
-                RoundedCornerShape(20.dp)
-            )
-            .padding(20.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Previous button
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.2f))
-                    )
-                )
-                .border(2.dp, PhantomPurple, CircleShape)
-                .clickable(onClick = onPrevious),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.SkipPrevious,
-                contentDescription = "Previous",
-                tint = PhantomPurple,
-                modifier = Modifier.size(40.dp)
-            )
-        }
-        
-        // MASSIVE Play/Pause button
-        Box(
-            modifier = Modifier
-                .size(110.dp)
-                .scale(scaleAnim)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        if (isPlaying) {
-                            listOf(PhantomGreen, PhantomGreen.copy(alpha = 0.6f))
-                        } else {
-                            listOf(PhantomPurple, PhantomPurple.copy(alpha = 0.6f))
-                        }
-                    )
-                )
-                .border(
-                    3.dp,
-                    if (isPlaying) PhantomGreen else PhantomPurple,
-                    CircleShape
-                )
-                .clickable(onClick = onPlayPause),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Play",
-                tint = PhantomBlack,
-                modifier = Modifier.size(56.dp)
-            )
-        }
-        
-        // Next button
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(PhantomOrange.copy(alpha = 0.5f), PhantomOrange.copy(alpha = 0.2f))
-                    )
-                )
-                .border(2.dp, PhantomOrange, CircleShape)
-                .clickable(onClick = onNext),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.SkipNext,
-                contentDescription = "Next",
-                tint = PhantomOrange,
-                modifier = Modifier.size(40.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomControlRow(
-    isFavorite: Boolean,
-    onFavoriteToggle: () -> Unit,
-    onShuffleToggle: () -> Unit,
-    onRepeatToggle: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        IconButton(
-            onClick = onShuffleToggle,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(SurfaceGlass.copy(alpha = 0.3f))
-                .border(1.dp, PhantomPurple.copy(alpha = 0.5f), CircleShape)
-        ) {
-            Icon(Icons.Default.Shuffle, null, tint = PhantomPurple)
-        }
-        
-        IconButton(
-            onClick = onFavoriteToggle,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(
-                    if (isFavorite) {
-                        Brush.radialGradient(listOf(PhantomOrange.copy(alpha = 0.5f), Color.Transparent))
-                    } else {
-                        Brush.radialGradient(listOf(SurfaceGlass.copy(alpha = 0.3f), Color.Transparent))
-                    }
-                )
-                .border(1.dp, if (isFavorite) PhantomOrange else PhantomGreen.copy(alpha = 0.5f), CircleShape)
-        ) {
-            Icon(
-                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                null,
-                tint = if (isFavorite) PhantomOrange else PhantomGreen
-            )
-        }
-        
-        IconButton(
-            onClick = onRepeatToggle,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(SurfaceGlass.copy(alpha = 0.3f))
-                .border(1.dp, PhantomGreen.copy(alpha = 0.5f), CircleShape)
-        ) {
-            Icon(Icons.Default.Repeat, null, tint = PhantomGreen)
         }
     }
 }
@@ -707,5 +645,5 @@ private fun formatTime(timeMs: Long): String {
     val totalSeconds = timeMs / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return String.format("%d:%02d", minutes, seconds)
+    return String.format("%02d:%02d", minutes, seconds)
 }
