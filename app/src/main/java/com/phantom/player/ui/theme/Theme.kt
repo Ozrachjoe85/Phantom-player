@@ -15,77 +15,77 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = PhantomPurple,
-    onPrimary = PhantomBlack,
-    primaryContainer = PhantomDarkPurple,
-    onPrimaryContainer = PhantomPurple,
+private val LiquidMetalColorScheme = darkColorScheme(
+    primary = ElectricBlue,
+    onPrimary = DeepBlack,
+    primaryContainer = AtmosphericDeep,
+    onPrimaryContainer = ElectricBlue,
     
-    secondary = PhantomPurple,
-    onSecondary = PhantomBlack,
-    secondaryContainer = PhantomDarkPurple,
-    onSecondaryContainer = PhantomPurple,
+    secondary = HoloCyan,
+    onSecondary = DeepBlack,
+    secondaryContainer = AtmosphericDeep,
+    onSecondaryContainer = HoloCyan,
     
-    tertiary = PhantomOrange,
-    onTertiary = PhantomBlack,
-    tertiaryContainer = PhantomDarkPurple,
-    onTertiaryContainer = PhantomOrange,
+    tertiary = MetallicGold,
+    onTertiary = DeepBlack,
+    tertiaryContainer = AtmosphericDeep,
+    onTertiaryContainer = MetallicGold,
     
-    error = PhantomOrange,
-    onError = PhantomBlack,
-    errorContainer = PhantomDarkPurple,
-    onErrorContainer = PhantomOrange,
+    error = HoloPink,
+    onError = DeepBlack,
+    errorContainer = AtmosphericDeep,
+    onErrorContainer = HoloPink,
     
-    background = PhantomBlack,
-    onBackground = PhantomWhite,
+    background = AtmosphericBlue,
+    onBackground = ChromeLight,
     
-    surface = PhantomBlack,
-    onSurface = PhantomWhite,
-    surfaceVariant = PhantomDarkPurple,
-    onSurfaceVariant = PhantomWhite,
+    surface = AtmosphericBlue,
+    onSurface = ChromeLight,
+    surfaceVariant = AtmosphericDeep,
+    onSurfaceVariant = MetallicSilver,
     
-    outline = PhantomDarkPurple,
-    outlineVariant = PhantomDarkPurple,
+    outline = ElectricBlue,
+    outlineVariant = AtmosphericDeep,
     
-    inverseSurface = PhantomWhite,
-    inverseOnSurface = PhantomBlack,
-    inversePrimary = PhantomGreen,
+    inverseSurface = ChromeLight,
+    inverseOnSurface = DeepBlack,
+    inversePrimary = HoloCyan,
     
-    // Surface tints for glass effect
-    surfaceTint = PhantomPurple,
-    
-    // Scrim for overlays
-    scrim = PhantomBlack.copy(alpha = 0.8f)
+    surfaceTint = ElectricBlue,
+    scrim = DeepBlack.copy(alpha = 0.8f)
 )
 
+// Backwards compatibility
+private val DarkColorScheme = LiquidMetalColorScheme
+
 private val LightColorScheme = lightColorScheme(
-    primary = PhantomGreen,
-    onPrimary = PhantomWhite,
-    primaryContainer = PhantomWhite,
-    onPrimaryContainer = PhantomBlack,
+    primary = ElectricBlue,
+    onPrimary = ChromeLight,
+    primaryContainer = ChromeLight,
+    onPrimaryContainer = DeepBlack,
     
-    secondary = PhantomPurple,
-    onSecondary = PhantomWhite,
-    secondaryContainer = PhantomWhite,
-    onSecondaryContainer = PhantomBlack,
+    secondary = HoloCyan,
+    onSecondary = ChromeLight,
+    secondaryContainer = ChromeLight,
+    onSecondaryContainer = DeepBlack,
     
-    tertiary = PhantomOrange,
-    onTertiary = PhantomWhite,
-    tertiaryContainer = PhantomWhite,
-    onTertiaryContainer = PhantomBlack,
+    tertiary = MetallicGold,
+    onTertiary = ChromeLight,
+    tertiaryContainer = ChromeLight,
+    onTertiaryContainer = DeepBlack,
     
-    background = PhantomWhite,
-    onBackground = PhantomBlack,
+    background = ChromeLight,
+    onBackground = DeepBlack,
     
-    surface = PhantomWhite,
-    onSurface = PhantomBlack,
-    surfaceVariant = PhantomWhite,
-    onSurfaceVariant = PhantomDarkPurple
+    surface = ChromeLight,
+    onSurface = DeepBlack,
+    surfaceVariant = MetallicSilver,
+    onSurfaceVariant = AtmosphericDeep
 )
 
 @Composable
 fun PhantomPlayerTheme(
-    darkTheme: Boolean = true, // Force dark theme by default
+    darkTheme: Boolean = true, // Always dark for liquid metal aesthetic
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -94,7 +94,7 @@ fun PhantomPlayerTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
+        darkTheme -> LiquidMetalColorScheme
         else -> LightColorScheme
     }
     
@@ -104,8 +104,8 @@ fun PhantomPlayerTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
             window.navigationBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 
