@@ -66,7 +66,6 @@ fun PlayerScreen(
     val duration by playerViewModel.duration.collectAsState()
     
     // EQ state for real-time visualization
-    val eqBands by eqViewModel.bands.collectAsState()
     val isAutoEqActive by eqViewModel.isAutoEqActive.collectAsState()
     
     Box(
