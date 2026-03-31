@@ -15,15 +15,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -36,85 +33,100 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.PlayerViewModel
-import kotlin.math.cos
+import com.phantom.player.ui.viewmodel.EqViewModel
 import kotlin.math.sin
+import kotlin.math.cos
 import kotlin.random.Random
 
-// Phantom Dark Aesthetic Colors
-private val PhantomSmoke = Color(0xFF1C1C1C)
-private val PhantomGhost = Color(0xFF6A0DAD) // Deep purple
-private val PhantomGlow = Color(0xFF9D4EDD) // Light purple
-private val PhantomMist = Color(0xFF3C096C) // Dark purple
-private val PhantomFire = Color(0xFFFF006E) // Hot pink accent
-private val PhantomIce = Color(0xFF06FFA5) // Cyan accent
-private val PhantomAsh = Color(0xFF0D0D0D) // Almost black
+/**
+ * LIQUID METAL HOLOGRAPHIC DESIGN
+ * 
+ * Concept: Fluid metallic surfaces, holographic refractions, 3D depth
+ * Colors: Chrome silver, electric blue, holographic rainbow, deep black
+ * Effects: Liquid morphing, light refractions, metallic reflections
+ */
+
+// Metallic color palette
+private val MetallicSilver = Color(0xFFC0C0C0)
+private val ChromeLight = Color(0xFFE8E8E8)
+private val ElectricBlue = Color(0xFF00D4FF)
+private val HoloPink = Color(0xFFFF00FF)
+private val HoloCyan = Color(0xFF00FFFF)
+private val DeepBlack = Color(0xFF000000)
+private val MetallicGold = Color(0xFFFFD700)
 
 @Composable
 fun PlayerScreen(
-    viewModel: PlayerViewModel = hiltViewModel()
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    eqViewModel: EqViewModel = hiltViewModel()
 ) {
-    val currentSong by viewModel.currentSong.collectAsState()
-    val isPlaying by viewModel.isPlaying.collectAsState()
-    val currentPosition by viewModel.currentPosition.collectAsState()
-    val duration by viewModel.duration.collectAsState()
+    val currentSong by playerViewModel.currentSong.collectAsState()
+    val isPlaying by playerViewModel.isPlaying.collectAsState()
+    val currentPosition by playerViewModel.currentPosition.collectAsState()
+    val duration by playerViewModel.duration.collectAsState()
+    
+    // EQ state for real-time visualization
+    val eqBands by eqViewModel.bands.collectAsState()
+    val isAutoEqActive by eqViewModel.isAutoEqActive.collectAsState()
     
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhantomAsh)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF000814),
+                        Color(0xFF001233),
+                        Color(0xFF000814)
+                    )
+                )
+            )
     ) {
-        // Animated smoke/mist background
-        SmokeBackground(isPlaying = isPlaying)
+        // Holographic background particles
+        HolographicParticles(isPlaying = isPlaying)
         
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Liquid Metal Album Display
+            LiquidMetalAlbumArt(
+                albumArtPath = currentSong?.albumArtPath,
+                isPlaying = isPlaying,
+                trackTitle = currentSong?.title ?: "NO TRACK",
+                artist = currentSong?.artist ?: "UNKNOWN"
+            )
+            
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Phantom logo/title
-            PhantomHeader()
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Main album art with ghostly glow
-            GhostlyAlbumArt(
-                albumArtPath = currentSong?.albumArtPath,
+            // Real-time EQ Visualization
+            LiveEqVisualizer(
+                eqBands = eqBands,
+                isAutoEqActive = isAutoEqActive,
                 isPlaying = isPlaying
             )
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Track info with fade effect
-            PhantomTrackInfo(
-                title = currentSong?.title ?: "Silence",
-                artist = currentSong?.artist ?: "Unknown Specter",
-                album = currentSong?.album ?: ""
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Spectral waveform
-            SpectralWaveform(isPlaying = isPlaying)
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Progress with ghostly trail
-            GhostlyProgress(
+            // Holographic Progress Bar
+            HolographicProgressBar(
                 currentPosition = currentPosition,
                 duration = duration,
-                onSeek = { viewModel.seekTo(it) }
+                onSeek = { playerViewModel.seekTo(it) }
             )
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Ethereal controls
-            EtherealControls(
+            // Liquid Metal Controls
+            LiquidMetalControls(
                 isPlaying = isPlaying,
-                onPlayPause = { viewModel.togglePlayPause() },
-                onPrevious = { viewModel.skipToPrevious() },
-                onNext = { viewModel.skipToNext() }
+                onPlayPause = { playerViewModel.togglePlayPause() },
+                onPrevious = { playerViewModel.skipToPrevious() },
+                onNext = { playerViewModel.skipToNext() }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -123,305 +135,247 @@ fun PlayerScreen(
 }
 
 @Composable
-fun SmokeBackground(isPlaying: Boolean) {
-    val smoke1 = rememberInfiniteTransition(label = "smoke1")
-    val offset1 by smoke1.animateFloat(
+fun HolographicParticles(isPlaying: Boolean) {
+    val particles = remember {
+        List(30) {
+            HoloParticle(
+                x = Random.nextFloat(),
+                y = Random.nextFloat(),
+                size = Random.nextFloat() * 60f + 20f,
+                speed = Random.nextFloat() * 0.003f + 0.001f,
+                hue = Random.nextFloat()
+            )
+        }
+    }
+    
+    val time by rememberInfiniteTransition(label = "holo").animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
-            animation = tween(30000, easing = LinearEasing),
+            animation = tween(50000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "smoke1_offset"
+        label = "time"
     )
     
-    val smoke2 = rememberInfiniteTransition(label = "smoke2")
-    val offset2 by smoke2.animateFloat(
-        initialValue = 500f,
-        targetValue = -500f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(25000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "smoke2_offset"
-    )
-    
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        // Smoky gradient layers
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    PhantomMist.copy(alpha = if (isPlaying) 0.3f else 0.1f),
-                    Color.Transparent
-                ),
-                center = Offset(size.width * 0.3f, offset1 % size.height)
-            )
-        )
-        
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    PhantomGhost.copy(alpha = if (isPlaying) 0.2f else 0.05f),
-                    Color.Transparent
-                ),
-                center = Offset(size.width * 0.7f, (offset2 + size.height) % size.height)
-            )
-        )
+    if (isPlaying) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            particles.forEach { particle ->
+                val currentY = (particle.y + time * particle.speed) % 1f
+                val x = size.width * particle.x
+                val y = size.height * currentY
+                
+                val colors = listOf(
+                    ElectricBlue.copy(alpha = 0.3f),
+                    HoloPink.copy(alpha = 0.2f),
+                    HoloCyan.copy(alpha = 0.3f)
+                )
+                
+                val colorIndex = ((time * 0.1f + particle.hue) % 3f).toInt()
+                
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(
+                            colors[colorIndex % colors.size],
+                            Color.Transparent
+                        )
+                    ),
+                    radius = particle.size,
+                    center = Offset(x, y)
+                )
+            }
+        }
     }
 }
 
-@Composable
-fun PhantomHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "P H A N T O M",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Light,
-                letterSpacing = 8.sp,
-                color = PhantomGlow.copy(alpha = 0.7f)
-            )
-        )
-    }
-}
+data class HoloParticle(
+    val x: Float,
+    val y: Float,
+    val size: Float,
+    val speed: Float,
+    val hue: Float
+)
 
 @Composable
-fun GhostlyAlbumArt(
+fun LiquidMetalAlbumArt(
     albumArtPath: String?,
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    trackTitle: String,
+    artist: String
 ) {
-    val pulse = rememberInfiniteTransition(label = "pulse")
-    val glowAlpha by pulse.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
+    val rotation by rememberInfiniteTransition(label = "metal_rotate").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "glow"
+        label = "rotation"
+    )
+    
+    val shimmer by rememberInfiniteTransition(label = "shimmer").animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
     )
     
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f),
+        modifier = Modifier.size(300.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer glow effect
-        if (isPlaying) {
-            Box(
-                modifier = Modifier
-                    .size(280.dp)
-                    .blur(40.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                PhantomGlow.copy(alpha = glowAlpha),
-                                PhantomFire.copy(alpha = glowAlpha * 0.5f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
+        // Liquid metal outer ring
+        Canvas(
+            modifier = Modifier
+                .size(320.dp)
+                .rotate(if (isPlaying) rotation else 0f)
+        ) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val radius = size.minDimension / 2
+            
+            // Chrome metallic ring
+            drawCircle(
+                brush = Brush.sweepGradient(
+                    listOf(
+                        MetallicSilver,
+                        ChromeLight,
+                        ElectricBlue,
+                        ChromeLight,
+                        MetallicSilver
                     )
+                ),
+                radius = radius,
+                center = center,
+                style = Stroke(width = 6f)
+            )
+            
+            // Inner holographic ring
+            drawCircle(
+                brush = Brush.sweepGradient(
+                    listOf(
+                        HoloCyan.copy(alpha = 0.6f),
+                        HoloPink.copy(alpha = 0.6f),
+                        ElectricBlue.copy(alpha = 0.6f),
+                        HoloCyan.copy(alpha = 0.6f)
+                    )
+                ),
+                radius = radius - 10f,
+                center = center,
+                style = Stroke(width = 2f)
             )
         }
         
         // Main album art
         Box(
             modifier = Modifier
-                .size(240.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .size(280.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            Color(0xFF001233),
+                            Color(0xFF000814)
+                        )
+                    )
+                )
                 .border(
-                    2.dp,
+                    3.dp,
                     Brush.linearGradient(
-                        colors = listOf(
-                            PhantomGlow.copy(alpha = 0.6f),
-                            PhantomFire.copy(alpha = 0.4f),
-                            PhantomIce.copy(alpha = 0.3f)
+                        listOf(
+                            ElectricBlue,
+                            HoloCyan,
+                            ElectricBlue
                         )
                     ),
-                    RoundedCornerShape(20.dp)
-                )
-                .background(PhantomSmoke),
+                    CircleShape
+                ),
             contentAlignment = Alignment.Center
         ) {
+            // Metallic shimmer effect
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MetallicSilver.copy(alpha = 0.2f),
+                                Color.Transparent
+                            ),
+                            start = Offset(shimmer * 1000f, 0f),
+                            end = Offset(shimmer * 1000f + 200f, 500f)
+                        )
+                    )
+            )
+            
             if (albumArtPath != null) {
                 AsyncImage(
                     model = albumArtPath,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    alpha = if (isPlaying) 1f else 0.6f
+                    modifier = Modifier
+                        .size(260.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
-                
-                // Ghostly overlay when playing
-                if (isPlaying) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        PhantomMist.copy(alpha = 0.3f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                    )
-                }
             } else {
                 Icon(
                     Icons.Default.MusicNote,
                     contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = PhantomGlow.copy(alpha = 0.3f)
+                    modifier = Modifier.size(120.dp),
+                    tint = ElectricBlue.copy(alpha = 0.3f)
                 )
             }
         }
         
-        // Corner accents
-        CornerAccents(modifier = Modifier.size(240.dp))
-    }
-}
-
-@Composable
-fun CornerAccents(modifier: Modifier = Modifier) {
-    Box(modifier = modifier) {
-        // Top-left
-        Canvas(modifier = Modifier
-            .size(40.dp)
-            .align(Alignment.TopStart)
+        // Track info below
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = 50.dp)
+                .fillMaxWidth(0.85f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xDD000814),
+                            Color(0xEE001233),
+                            Color(0xDD000814)
+                        )
+                    )
+                )
+                .border(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        listOf(
+                            ElectricBlue.copy(alpha = 0.5f),
+                            HoloCyan.copy(alpha = 0.5f),
+                            ElectricBlue.copy(alpha = 0.5f)
+                        )
+                    ),
+                    RoundedCornerShape(16.dp)
+                )
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            drawLine(
-                color = PhantomIce,
-                start = Offset(0f, 20f),
-                end = Offset(0f, 0f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
+            Text(
+                text = trackTitle,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = ElectricBlue,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
             )
-            drawLine(
-                color = PhantomIce,
-                start = Offset(0f, 0f),
-                end = Offset(20f, 0f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-        }
-        
-        // Top-right
-        Canvas(modifier = Modifier
-            .size(40.dp)
-            .align(Alignment.TopEnd)
-        ) {
-            drawLine(
-                color = PhantomFire,
-                start = Offset(size.width, 20f),
-                end = Offset(size.width, 0f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-            drawLine(
-                color = PhantomFire,
-                start = Offset(size.width, 0f),
-                end = Offset(size.width - 20f, 0f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-        }
-        
-        // Bottom-left
-        Canvas(modifier = Modifier
-            .size(40.dp)
-            .align(Alignment.BottomStart)
-        ) {
-            drawLine(
-                color = PhantomGlow,
-                start = Offset(0f, size.height - 20f),
-                end = Offset(0f, size.height),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-            drawLine(
-                color = PhantomGlow,
-                start = Offset(0f, size.height),
-                end = Offset(20f, size.height),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-        }
-        
-        // Bottom-right
-        Canvas(modifier = Modifier
-            .size(40.dp)
-            .align(Alignment.BottomEnd)
-        ) {
-            drawLine(
-                color = PhantomIce,
-                start = Offset(size.width, size.height - 20f),
-                end = Offset(size.width, size.height),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-            drawLine(
-                color = PhantomIce,
-                start = Offset(size.width, size.height),
-                end = Offset(size.width - 20f, size.height),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-        }
-    }
-}
-
-@Composable
-fun PhantomTrackInfo(
-    title: String,
-    artist: String,
-    album: String
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                color = PhantomGlow
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = artist,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp,
-                color = PhantomIce.copy(alpha = 0.8f)
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-        
-        if (album.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
             
             Text(
-                text = album,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = PhantomFire.copy(alpha = 0.6f),
-                    letterSpacing = 0.5.sp
-                ),
+                text = artist,
+                style = MaterialTheme.typography.bodyMedium,
+                color = HoloCyan.copy(alpha = 0.8f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
@@ -430,73 +384,137 @@ fun PhantomTrackInfo(
     }
 }
 
+/**
+ * REAL-TIME EQ VISUALIZER
+ * Shows actual EQ band values with animated bars
+ */
 @Composable
-fun SpectralWaveform(isPlaying: Boolean) {
-    val transition = rememberInfiniteTransition(label = "spectral")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "phase"
-    )
-    
-    Canvas(
+fun LiveEqVisualizer(
+    eqBands: List<com.phantom.player.data.local.database.entities.EqBand>,
+    isAutoEqActive: Boolean,
+    isPlaying: Boolean
+) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(PhantomSmoke.copy(alpha = 0.5f))
-            .border(
-                1.dp,
-                PhantomGlow.copy(alpha = 0.3f),
-                RoundedCornerShape(12.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0x33001233),
+                        Color(0x22000814)
+                    )
+                )
             )
-            .padding(8.dp)
-    ) {
-        if (isPlaying) {
-            val width = size.width
-            val height = size.height
-            val centerY = height / 2
-            val points = 100
-            
-            val path = Path()
-            
-            for (i in 0 until points) {
-                val x = (i.toFloat() / points) * width
-                val frequency = 0.05f
-                val amplitude = height * 0.3f
-                val y = centerY + sin((i * frequency + phase * 0.01f).toDouble()).toFloat() * amplitude
-                
-                if (i == 0) {
-                    path.moveTo(x, y)
-                } else {
-                    path.lineTo(x, y)
-                }
-            }
-            
-            // Draw spectral line with gradient
-            drawPath(
-                path = path,
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        PhantomIce,
-                        PhantomGlow,
-                        PhantomFire,
-                        PhantomGlow,
-                        PhantomIce
+            .border(
+                2.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        if (isAutoEqActive) MetallicGold else ElectricBlue,
+                        if (isAutoEqActive) MetallicGold else HoloCyan,
+                        if (isAutoEqActive) MetallicGold else ElectricBlue
                     )
                 ),
-                style = Stroke(width = 2f, cap = StrokeCap.Round)
+                RoundedCornerShape(16.dp)
             )
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (isAutoEqActive) "AUTO EQ ACTIVE" else "MANUAL EQ",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = if (isAutoEqActive) MetallicGold else ElectricBlue
+            )
+            
+            Icon(
+                if (isAutoEqActive) Icons.Default.AutoAwesome else Icons.Default.Tune,
+                contentDescription = null,
+                tint = if (isAutoEqActive) MetallicGold else HoloCyan,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Real-time EQ bars
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+        ) {
+            if (eqBands.isNotEmpty()) {
+                val width = size.width
+                val height = size.height
+                val barWidth = (width / eqBands.size) * 0.6f
+                val spacing = width / eqBands.size
+                
+                eqBands.forEachIndexed { index, band ->
+                    // Convert dB value to visual height (-12 to +12 dB range)
+                    val normalizedValue = (band.value + 12f) / 24f  // 0 to 1
+                    val barHeight = normalizedValue * height
+                    val x = index * spacing + spacing * 0.2f
+                    
+                    // Bar color based on value
+                    val barColor = when {
+                        band.value > 6f -> MetallicGold
+                        band.value > 0f -> ElectricBlue
+                        band.value < -6f -> HoloPink
+                        else -> HoloCyan
+                    }
+                    
+                    // Glow effect
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                barColor.copy(alpha = 0.3f),
+                                barColor.copy(alpha = 0.1f)
+                            )
+                        ),
+                        topLeft = Offset(x - 2f, height - barHeight - 2f),
+                        size = androidx.compose.ui.geometry.Size(barWidth + 4f, barHeight + 4f)
+                    )
+                    
+                    // Solid bar
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                barColor,
+                                barColor.copy(alpha = 0.7f)
+                            )
+                        ),
+                        topLeft = Offset(x, height - barHeight),
+                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
+                    )
+                    
+                    // Frequency label
+                    drawContext.canvas.nativeCanvas.apply {
+                        val paint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.argb(180, 0, 212, 255)
+                            textSize = 24f
+                            textAlign = android.graphics.Paint.Align.CENTER
+                        }
+                        drawText(
+                            "${band.frequency}",
+                            x + barWidth / 2,
+                            height + 30f,
+                            paint
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun GhostlyProgress(
+fun HolographicProgressBar(
     currentPosition: Long,
     duration: Long,
     onSeek: (Long) -> Unit
@@ -506,61 +524,11 @@ fun GhostlyProgress(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(PhantomSmoke.copy(alpha = 0.5f))
-            .border(1.dp, PhantomGlow.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-            .padding(20.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x22001233))
+            .border(1.dp, ElectricBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(16.dp)
     ) {
-        // Progress bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(PhantomMist.copy(alpha = 0.3f))
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val seekProgress = (offset.x / size.width).coerceIn(0f, 1f)
-                        onSeek((seekProgress * duration).toLong())
-                    }
-                }
-        ) {
-            // Glow trail
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .blur(8.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                PhantomGlow,
-                                PhantomFire,
-                                PhantomIce
-                            )
-                        )
-                    )
-            )
-            
-            // Solid progress
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                PhantomGlow,
-                                PhantomFire,
-                                PhantomIce
-                            )
-                        )
-                    )
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
         // Time labels
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -568,56 +536,115 @@ fun GhostlyProgress(
         ) {
             Text(
                 text = formatTime(currentPosition),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 1.sp,
-                    color = PhantomIce
-                )
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = ElectricBlue
             )
+            
             Text(
                 text = formatTime(duration),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 1.sp,
-                    color = PhantomFire
-                )
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = HoloCyan.copy(alpha = 0.7f)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Progress bar
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFF001233))
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        val seekProgress = (offset.x / size.width).coerceIn(0f, 1f)
+                        onSeek((seekProgress * duration).toLong())
+                    }
+                }
+        ) {
+            // Progress fill
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                ElectricBlue,
+                                HoloCyan,
+                                HoloPink.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+            )
+            
+            // Glow effect
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .blur(8.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                ElectricBlue.copy(alpha = 0.5f),
+                                HoloCyan.copy(alpha = 0.5f)
+                            )
+                        )
+                    )
             )
         }
     }
 }
 
 @Composable
-fun EtherealControls(
+fun LiquidMetalControls(
     isPlaying: Boolean,
     onPlayPause: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit
 ) {
+    val scale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.1f else 1f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 200f),
+        label = "scale"
+    )
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .height(100.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.horizontalGradient(
-                    colors = listOf(
-                        PhantomMist.copy(alpha = 0.4f),
-                        PhantomSmoke.copy(alpha = 0.6f),
-                        PhantomMist.copy(alpha = 0.4f)
+                    listOf(
+                        Color(0x44001233),
+                        Color(0x33000814),
+                        Color(0x44001233)
                     )
                 )
             )
             .border(
                 2.dp,
                 Brush.horizontalGradient(
-                    colors = listOf(
-                        PhantomGlow.copy(alpha = 0.5f),
-                        PhantomFire.copy(alpha = 0.5f),
-                        PhantomIce.copy(alpha = 0.5f)
+                    listOf(
+                        ElectricBlue,
+                        HoloCyan,
+                        HoloPink,
+                        HoloCyan,
+                        ElectricBlue
                     )
                 ),
-                RoundedCornerShape(24.dp)
+                RoundedCornerShape(20.dp)
             )
-            .padding(24.dp),
+            .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -628,57 +655,71 @@ fun EtherealControls(
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        colors = listOf(
-                            PhantomGlow.copy(alpha = 0.3f),
+                        listOf(
+                            ElectricBlue.copy(alpha = 0.3f),
                             Color.Transparent
                         )
                     )
                 )
-                .border(2.dp, PhantomGlow.copy(alpha = 0.6f), CircleShape)
+                .border(2.dp, ElectricBlue, CircleShape)
                 .clickable(onClick = onPrevious),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Default.SkipPrevious,
                 contentDescription = "Previous",
-                tint = PhantomGlow,
+                tint = ElectricBlue,
                 modifier = Modifier.size(32.dp)
             )
         }
         
-        // Play/Pause - larger, more prominent
+        // Play/Pause - LIQUID METAL
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(90.dp)
+                .scale(scale)
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        colors = if (isPlaying) {
+                        if (isPlaying) {
                             listOf(
-                                PhantomFire.copy(alpha = 0.6f),
-                                PhantomFire.copy(alpha = 0.3f)
+                                ElectricBlue,
+                                ElectricBlue.copy(alpha = 0.7f),
+                                Color(0xFF001233)
                             )
                         } else {
                             listOf(
-                                PhantomIce.copy(alpha = 0.6f),
-                                PhantomIce.copy(alpha = 0.3f)
+                                MetallicSilver,
+                                ChromeLight.copy(alpha = 0.7f),
+                                Color(0xFF001233)
                             )
                         }
                     )
                 )
                 .border(
                     3.dp,
-                    if (isPlaying) PhantomFire else PhantomIce,
+                    if (isPlaying) ElectricBlue else MetallicSilver,
                     CircleShape
                 )
                 .clickable(onClick = onPlayPause),
             contentAlignment = Alignment.Center
         ) {
+            // Holographic glow
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .blur(20.dp)
+                    .background(
+                        if (isPlaying) ElectricBlue.copy(alpha = 0.6f) else Color.Transparent,
+                        CircleShape
+                    )
+            )
+            
             Icon(
                 if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = if (isPlaying) "Pause" else "Play",
-                tint = if (isPlaying) PhantomFire else PhantomIce,
-                modifier = Modifier.size(40.dp)
+                tint = if (isPlaying) DeepBlack else ElectricBlue,
+                modifier = Modifier.size(45.dp)
             )
         }
         
@@ -689,20 +730,20 @@ fun EtherealControls(
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        colors = listOf(
-                            PhantomIce.copy(alpha = 0.3f),
+                        listOf(
+                            HoloCyan.copy(alpha = 0.3f),
                             Color.Transparent
                         )
                     )
                 )
-                .border(2.dp, PhantomIce.copy(alpha = 0.6f), CircleShape)
+                .border(2.dp, HoloCyan, CircleShape)
                 .clickable(onClick = onNext),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Default.SkipNext,
                 contentDescription = "Next",
-                tint = PhantomIce,
+                tint = HoloCyan,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -713,5 +754,5 @@ private fun formatTime(timeMs: Long): String {
     val totalSeconds = timeMs / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return String.format("%d:%02d", minutes, seconds)
+    return String.format("%02d:%02d", minutes, seconds)
 }
