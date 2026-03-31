@@ -1,117 +1,43 @@
 package com.phantom.player.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
 
-private val LiquidMetalColorScheme = darkColorScheme(
-    primary = ElectricBlue,
-    onPrimary = DeepBlack,
-    primaryContainer = AtmosphericDeep,
-    onPrimaryContainer = ElectricBlue,
-    
-    secondary = HoloCyan,
-    onSecondary = DeepBlack,
-    secondaryContainer = AtmosphericDeep,
-    onSecondaryContainer = HoloCyan,
-    
-    tertiary = MetallicGold,
-    onTertiary = DeepBlack,
-    tertiaryContainer = AtmosphericDeep,
-    onTertiaryContainer = MetallicGold,
-    
-    error = HoloPink,
-    onError = DeepBlack,
-    errorContainer = AtmosphericDeep,
-    onErrorContainer = HoloPink,
-    
-    background = AtmosphericBlue,
-    onBackground = ChromeLight,
-    
-    surface = AtmosphericBlue,
-    onSurface = ChromeLight,
-    surfaceVariant = AtmosphericDeep,
-    onSurfaceVariant = MetallicSilver,
-    
-    outline = ElectricBlue,
-    outlineVariant = AtmosphericDeep,
-    
-    inverseSurface = ChromeLight,
-    inverseOnSurface = DeepBlack,
-    inversePrimary = HoloCyan,
-    
-    surfaceTint = ElectricBlue,
-    scrim = DeepBlack.copy(alpha = 0.8f)
-)
+// ============================================================================
+// CYBERPUNK RETRO PALETTE - Phantom Edition
+// ============================================================================
 
-// Backwards compatibility
-private val DarkColorScheme = LiquidMetalColorScheme
+// Primary Phantom Colors (Existing)
+val PhantomPurple = Color(0xFF9D4EDD)      // Deep neon purple
+val PhantomOrange = Color(0xFFFF6B35)      // Electric orange
+val PhantomPink = Color(0xFFFF006E)        // Hot pink accent
+val PhantomBlue = Color(0xFF00D9FF)        // Cyber blue
 
-private val LightColorScheme = lightColorScheme(
-    primary = ElectricBlue,
-    onPrimary = ChromeLight,
-    primaryContainer = ChromeLight,
-    onPrimaryContainer = DeepBlack,
-    
-    secondary = HoloCyan,
-    onSecondary = ChromeLight,
-    secondaryContainer = ChromeLight,
-    onSecondaryContainer = DeepBlack,
-    
-    tertiary = MetallicGold,
-    onTertiary = ChromeLight,
-    tertiaryContainer = ChromeLight,
-    onTertiaryContainer = DeepBlack,
-    
-    background = ChromeLight,
-    onBackground = DeepBlack,
-    
-    surface = ChromeLight,
-    onSurface = DeepBlack,
-    surfaceVariant = MetallicSilver,
-    onSurfaceVariant = AtmosphericDeep
-)
+// Background & Surfaces
+val PhantomBlack = Color(0xFF0A0A0A)       // True black (OLED)
+val SurfaceGlass = Color(0xFF1A1A1A)       // Glass surface
+val SurfaceDark = Color(0xFF0F0F0F)        // Dark surface
 
-@Composable
-fun PhantomPlayerTheme(
-    darkTheme: Boolean = true, // Always dark for liquid metal aesthetic
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> LiquidMetalColorScheme
-        else -> LightColorScheme
-    }
-    
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
-        }
-    }
+// Text & Icons
+val PhantomWhite = Color(0xFFFFFFFF)       // Pure white
+val TextSecondary = Color(0xFFB3B3B3)      // Gray text
+val TextDisabled = Color(0xFF666666)       // Disabled text
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
-}
+// EQ Screen Specific Colors
+val CyberGreen = Color(0xFF00FF88)         // Oscilloscope phosphor green
+val CyberOrange = Color(0xFFFF6B35)        // VU meter orange (matches PhantomOrange)
+val CyberAmber = Color(0xFFFFB000)         // LED indicator amber
+val CyberRed = Color(0xFFFF1744)           // Peak warning red
+val CyberBlue = Color(0xFF00D9FF)          // Neon blue (matches PhantomBlue)
+val CyberPurple = Color(0xFF9D4EDD)        // Holographic purple (matches PhantomPurple)
+val GhostGray = Color(0xFF606060)          // Ghost overlay
+val StudioBlack = Color(0xFF0A0A0A)        // Studio black (matches PhantomBlack)
+
+// Gradients (as Color for reference)
+val GradientStart = Color(0xFF9D4EDD)      // Purple
+val GradientEnd = Color(0xFFFF6B35)        // Orange
+
+// Status Colors
+val SuccessGreen = Color(0xFF00FF88)       // Success state
+val WarningAmber = Color(0xFFFFB000)       // Warning state
+val ErrorRed = Color(0xFFFF1744)           // Error state
+val InfoBlue = Color(0xFF00D9FF)           // Info state
