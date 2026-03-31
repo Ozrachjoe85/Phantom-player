@@ -19,551 +19,310 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.phantom.player.ui.theme.*
-import com.phantom.player.ui.viewmodel.LibraryViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    libraryViewModel: LibraryViewModel = hiltViewModel()
-) {
-    var gaplessPlayback by remember { mutableStateOf(true) }
-    var globalEq by remember { mutableStateOf(true) }
-    var fadeInDuration by remember { mutableStateOf(2f) }
-    var fadeOutDuration by remember { mutableStateOf(2f) }
-    var replayGain by remember { mutableStateOf(false) }
-    var headphoneMode by remember { mutableStateOf(false) }
-    
+fun SettingsScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhantomBlack)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF000814),
+                        Color(0xFF001233),
+                        Color(0xFF000814)
+                    )
+                )
+            )
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // App Header
             item {
-                AppInfoHeader()
+                Text(
+                    text = "SETTINGS",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 3.sp
+                    ),
+                    color = ElectricBlue
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // Playback Section
             item {
-                SettingsSection(title = "PLAYBACK") {
-                    SettingToggle(
-                        icon = Icons.Default.SkipNext,
-                        title = "Gapless Playback",
-                        description = "Seamless transition between tracks",
-                        checked = gaplessPlayback,
-                        onCheckedChange = { gaplessPlayback = it }
-                    )
-                    
-                    SettingSlider(
-                        icon = Icons.Default.MusicNote,
-                        title = "Fade In Duration",
-                        description = "${fadeInDuration.toInt()} seconds",
-                        value = fadeInDuration,
-                        onValueChange = { fadeInDuration = it },
-                        valueRange = 0f..5f
-                    )
-                    
-                    SettingSlider(
-                        icon = Icons.Default.MusicNote,
-                        title = "Fade Out Duration",
-                        description = "${fadeOutDuration.toInt()} seconds",
-                        value = fadeOutDuration,
-                        onValueChange = { fadeOutDuration = it },
-                        valueRange = 0f..5f
-                    )
-                    
-                    SettingToggle(
-                        icon = Icons.Default.Equalizer,
-                        title = "Replay Gain",
-                        description = "Normalize volume across tracks",
-                        checked = replayGain,
-                        onCheckedChange = { replayGain = it }
-                    )
-                }
+                SettingsSection(title = "AUDIO")
             }
             
-            // Audio Section
             item {
-                SettingsSection(title = "AUDIO") {
-                    SettingToggle(
-                        icon = Icons.Default.Tune,
-                        title = "Global EQ Control",
-                        description = "Apply EQ to all audio sources",
-                        checked = globalEq,
-                        onCheckedChange = { globalEq = it }
-                    )
-                    
-                    SettingToggle(
-                        icon = Icons.Default.Headphones,
-                        title = "Headphone Mode",
-                        description = "Optimize audio for headphones",
-                        checked = headphoneMode,
-                        onCheckedChange = { headphoneMode = it }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.AudioFile,
-                        title = "Audio Buffer Size",
-                        description = "Normal (Default)",
-                        onClick = { }
-                    )
-                }
+                SettingsItem(
+                    icon = Icons.Default.GraphicEq,
+                    title = "Audio Engine",
+                    subtitle = "Maximum buffer size",
+                    onClick = { }
+                )
             }
             
-            // Library Section
             item {
-                SettingsSection(title = "LIBRARY") {
-                    SettingButton(
-                        icon = Icons.Default.Refresh,
-                        title = "Rescan Library",
-                        description = "Scan device for new music files",
-                        onClick = { libraryViewModel.scanLibrary() }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.FolderOpen,
-                        title = "Library Folders",
-                        description = "Manage scanned folders",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Delete,
-                        title = "Clear Library Cache",
-                        description = "Remove cached album art and metadata",
-                        onClick = { },
-                        isDestructive = true
-                    )
-                }
+                SettingsItem(
+                    icon = Icons.Default.HighQuality,
+                    title = "Audio Quality",
+                    subtitle = "24-bit / 192kHz",
+                    onClick = { }
+                )
             }
             
-            // Interface Section
             item {
-                SettingsSection(title = "INTERFACE") {
-                    SettingButton(
-                        icon = Icons.Default.Palette,
-                        title = "Theme",
-                        description = "Cyberpunk (Default)",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Speed,
-                        title = "Animations",
-                        description = "Enabled",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Fullscreen,
-                        title = "Now Playing View",
-                        description = "Full Screen",
-                        onClick = { }
-                    )
-                }
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSection(title = "PLAYBACK")
             }
             
-            // Advanced Section
             item {
-                SettingsSection(title = "ADVANCED") {
-                    SettingButton(
-                        icon = Icons.Default.Storage,
-                        title = "Cache Management",
-                        description = "125 MB used",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.DataUsage,
-                        title = "Network Settings",
-                        description = "Album art quality, streaming",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Build,
-                        title = "Developer Options",
-                        description = "Debug logs, performance stats",
-                        onClick = { }
-                    )
-                }
+                var gapless by remember { mutableStateOf(true) }
+                SettingsSwitchItem(
+                    icon = Icons.Default.QueueMusic,
+                    title = "Gapless Playback",
+                    subtitle = "Seamless track transitions",
+                    checked = gapless,
+                    onCheckedChange = { gapless = it }
+                )
             }
             
-            // About Section
             item {
-                SettingsSection(title = "ABOUT") {
-                    SettingButton(
-                        icon = Icons.Default.Info,
-                        title = "Version",
-                        description = "Phantom Player 1.0.0",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Code,
-                        title = "Open Source Licenses",
-                        description = "View third-party software",
-                        onClick = { }
-                    )
-                    
-                    SettingButton(
-                        icon = Icons.Default.Policy,
-                        title = "Privacy Policy",
-                        description = "Data collection and usage",
-                        onClick = { }
-                    )
-                }
+                var autoPlay by remember { mutableStateOf(true) }
+                SettingsSwitchItem(
+                    icon = Icons.Default.PlayCircle,
+                    title = "Auto-Play",
+                    subtitle = "Continue to next track",
+                    checked = autoPlay,
+                    onCheckedChange = { autoPlay = it }
+                )
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSection(title = "APPEARANCE")
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Palette,
+                    title = "Theme",
+                    subtitle = "Liquid Metal Holographic",
+                    onClick = { }
+                )
+            }
+            
+            item {
+                var animations by remember { mutableStateOf(true) }
+                SettingsSwitchItem(
+                    icon = Icons.Default.Animation,
+                    title = "Animations",
+                    subtitle = "Particle effects & transitions",
+                    checked = animations,
+                    onCheckedChange = { animations = it }
+                )
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSection(title = "LIBRARY")
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.FolderOpen,
+                    title = "Scan Music",
+                    subtitle = "Update library",
+                    onClick = { }
+                )
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Storage,
+                    title = "Storage",
+                    subtitle = "Manage cache & data",
+                    onClick = { }
+                )
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSection(title = "ABOUT")
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "Version",
+                    subtitle = "Phantom Player 1.0.0",
+                    onClick = { }
+                )
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
 }
 
 @Composable
-fun AppInfoHeader() {
-    Box(
+fun SettingsSection(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp
+        ),
+        color = HoloCyan.copy(alpha = 0.7f),
+        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+    )
+}
+
+@Composable
+fun SettingsItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        PhantomPurple.copy(alpha = 0.2f),
-                        PhantomPurple.copy(alpha = 0.1f),
-                        Color.Transparent
-                    )
-                )
-            )
-            .border(
-                2.dp,
-                Brush.linearGradient(
-                    listOf(PhantomPurple.copy(alpha = 0.6f), PhantomPurple.copy(alpha = 0.4f))
-                ),
-                RoundedCornerShape(20.dp)
-            )
-            .padding(24.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x11001233))
+            .border(1.dp, ElectricBlue.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // App Icon Placeholder
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        Brush.radialGradient(
-                            listOf(PhantomPurple, PhantomPurple)
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            ElectricBlue.copy(alpha = 0.2f),
+                            Color.Transparent
                         )
                     )
-                    .border(3.dp, PhantomPurple, RoundedCornerShape(20.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = PhantomBlack,
-                    modifier = Modifier.size(40.dp)
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                "PHANTOM PLAYER",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 3.sp
-                ),
-                color = PhantomPurple
-            )
-            
-            Text(
-                "NEXT-GEN AUDIO EXPERIENCE",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 2.sp
-                ),
-                color = PhantomPurple
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                "Version 1.0.0",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomWhite.copy(alpha = 0.6f)
+                .border(1.dp, ElectricBlue.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = ElectricBlue,
+                modifier = Modifier.size(24.dp)
             )
         }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = ChromeLight
+            )
+            
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = HoloCyan.copy(alpha = 0.6f)
+            )
+        }
+        
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MetallicSilver.copy(alpha = 0.5f)
+        )
     }
 }
 
 @Composable
-fun SettingsSection(
+fun SettingsSwitchItem(
+    icon: ImageVector,
     title: String,
-    content: @Composable ColumnScope.() -> Unit
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
-    Column {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            ),
-            color = PhantomPurple,
-            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-        )
-        
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x11001233))
+            .border(1.dp, ElectricBlue.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(
-                    Brush.verticalGradient(
+                    Brush.radialGradient(
                         listOf(
-                            SurfaceGlass.copy(alpha = 0.3f),
-                            SurfaceGlass.copy(alpha = 0.1f)
+                            if (checked) ElectricBlue.copy(alpha = 0.3f) else Color.Transparent,
+                            Color.Transparent
                         )
                     )
                 )
                 .border(
                     1.dp,
-                    PhantomPurple.copy(alpha = 0.3f),
-                    RoundedCornerShape(16.dp)
-                )
-                .padding(8.dp)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                content = content
-            )
-        }
-    }
-}
-
-@Composable
-fun SettingToggle(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (checked) {
-                    Brush.horizontalGradient(
-                        listOf(
-                            PhantomPurple.copy(alpha = 0.15f),
-                            PhantomPurple.copy(alpha = 0.1f)
-                        )
-                    )
-                } else {
-                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-                }
-            )
-            .clickable { onCheckedChange(!checked) }
-            .padding(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = if (checked) PhantomPurple else PhantomPurple.copy(alpha = 0.6f),
-                modifier = Modifier.size(24.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = PhantomWhite
-                )
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        letterSpacing = 0.3.sp
-                    ),
-                    color = PhantomPurple.copy(alpha = 0.8f)
-                )
-            }
-            
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = PhantomPurple,
-                    checkedTrackColor = PhantomPurple.copy(alpha = 0.5f),
-                    uncheckedThumbColor = PhantomPurple.copy(alpha = 0.6f),
-                    uncheckedTrackColor = PhantomDarkPurple
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun SettingSlider(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    valueRange: ClosedFloatingPointRange<Float>
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        PhantomPurple.copy(alpha = 0.1f),
-                        Color.Transparent
-                    )
-                )
-            )
-            .padding(12.dp)
-    ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = PhantomPurple.copy(alpha = 0.8f),
-                    modifier = Modifier.size(24.dp)
-                )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = PhantomWhite
-                    )
-                    Text(
-                        description,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            letterSpacing = 0.3.sp
-                        ),
-                        color = PhantomPurple
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Slider(
-                value = value,
-                onValueChange = onValueChange,
-                valueRange = valueRange,
-                colors = SliderDefaults.colors(
-                    thumbColor = PhantomPurple,
-                    activeTrackColor = PhantomPurple,
-                    inactiveTrackColor = PhantomPurple.copy(alpha = 0.3f)
+                    if (checked) ElectricBlue else MetallicSilver.copy(alpha = 0.3f),
+                    RoundedCornerShape(10.dp)
                 ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 40.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun SettingButton(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    onClick: () -> Unit,
-    isDestructive: Boolean = false
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isDestructive) {
-                    Brush.horizontalGradient(
-                        listOf(
-                            PhantomOrange.copy(alpha = 0.1f),
-                            Color.Transparent
-                        )
-                    )
-                } else {
-                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-                }
-            )
-            .clickable(onClick = onClick)
-            .padding(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
             Icon(
-                icon,
+                imageVector = icon,
                 contentDescription = null,
-                tint = if (isDestructive) {
-                    PhantomOrange.copy(alpha = 0.8f)
-                } else {
-                    PhantomPurple.copy(alpha = 0.6f)
-                },
+                tint = if (checked) ElectricBlue else MetallicSilver.copy(alpha = 0.6f),
                 modifier = Modifier.size(24.dp)
             )
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = ChromeLight
+            )
             
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = if (isDestructive) PhantomOrange else PhantomWhite
-                )
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        letterSpacing = 0.3.sp
-                    ),
-                    color = PhantomPurple.copy(alpha = 0.8f)
-                )
-            }
-            
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = PhantomPurple.copy(alpha = 0.5f)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = HoloCyan.copy(alpha = 0.6f)
             )
         }
+        
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = ElectricBlue,
+                checkedTrackColor = ElectricBlue.copy(alpha = 0.5f),
+                uncheckedThumbColor = MetallicSilver,
+                uncheckedTrackColor = Color(0xFF001233)
+            )
+        )
     }
 }
