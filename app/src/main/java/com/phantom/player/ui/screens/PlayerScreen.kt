@@ -5,7 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,55 +47,63 @@ fun PlayerScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
     
+    var swipeOffset by remember { mutableStateOf(0f) }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PhantomBlack)
     ) {
-        // Animated Background Particles
-        AnimatedBackgroundParticles(isPlaying = isPlaying)
+        // Cyberpunk grid background
+        CyberpunkGrid(isPlaying = isPlaying)
         
-        // Pulsing Radial Glow
+        // Pulsing radial glow
         PulsingRadialGlow(isPlaying = isPlaying)
+        
+        // Animated particles
+        AnimatedBackgroundParticles(isPlaying = isPlaying)
         
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
-            // Album Art with Holographic Effect
+            // HERO: Album Art with Holographic Frame (40% of screen)
             HolographicAlbumArt(
                 albumArtPath = currentSong?.albumArtPath,
-                isPlaying = isPlaying
+                isPlaying = isPlaying,
+                onSwipeLeft = { viewModel.skipToNext() },
+                onSwipeRight = { viewModel.skipToPrevious() },
+                onTap = { /* Navigate to library */ },
+                onDoubleTap = {
+                    currentSong?.let { song ->
+                        viewModel.toggleFavorite(song.id, !song.isFavorite)
+                    }
+                }
             )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Track Info with Glitch Effect
-            GlitchTrackInfo(
-                title = currentSong?.title ?: "NO SIGNAL",
-                artist = currentSong?.artist ?: "UNKNOWN SOURCE",
-                album = currentSong?.album ?: "NULL",
-                isPlaying = isPlaying
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Waveform Visualizer - More Intense
-            IntenseWaveformVisualizer(isPlaying = isPlaying)
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 3D Spectrum Analyzer
-            ThreeDSpectrumAnalyzer(isPlaying = isPlaying)
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Neon Progress Bar with Time Display
+            // Track info with cyberpunk glitch effect
+            CyberpunkTrackInfo(
+                title = currentSong?.title ?: "NO SIGNAL DETECTED",
+                artist = currentSong?.artist ?: "UNKNOWN SOURCE",
+                album = currentSong?.album ?: "NULL REFERENCE",
+                isPlaying = isPlaying
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Real-time spectrum analyzer
+            CyberpunkSpectrumAnalyzer(isPlaying = isPlaying)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Progress bar with neon glow
             NeonProgressBar(
                 currentPosition = currentPosition,
                 duration = duration,
@@ -104,32 +112,748 @@ fun PlayerScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // VU Meters - Enhanced
-            EnhancedVUMeters(isPlaying = isPlaying)
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Main Playback Controls - Holographic Style
-            HolographicPlaybackControls(
+            // PRIMARY CONTROLS: 96dp Play, 64dp Skip (as per research)
+            CyberpunkPrimaryControls(
                 isPlaying = isPlaying,
                 onPlayPause = { viewModel.togglePlayPause() },
                 onPrevious = { viewModel.skipToPrevious() },
                 onNext = { viewModel.skipToNext() }
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
-            // Secondary Controls
-            SecondaryControls(
+            // SECONDARY CONTROLS: 48dp buttons
+            CyberpunkSecondaryControls(
                 isFavorite = currentSong?.isFavorite ?: false,
                 onFavoriteToggle = {
                     currentSong?.let { song ->
                         viewModel.toggleFavorite(song.id, !song.isFavorite)
                     }
-                }
+                },
+                onEqClick = { /* Navigate to EQ */ },
+                onShuffleClick = { /* Toggle shuffle */ },
+                onRepeatClick = { /* Toggle repeat */ }
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+// ============================================================================
+// CYBERPUNK GRID BACKGROUND
+// ============================================================================
+@Composable
+fun CyberpunkGrid(isPlaying: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "grid")
+    val gridOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 50f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "grid_offset"
+    )
+    
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val gridSpacing = 50f
+        val lineAlpha = if (isPlaying) 0.15f else 0.08f
+        
+        // Vertical lines
+        var x = gridOffset % gridSpacing
+        while (x < size.width) {
+            drawLine(
+                color = PhantomPurple.copy(alpha = lineAlpha),
+                start = Offset(x, 0f),
+                end = Offset(x, size.height),
+                strokeWidth = 1f
+            )
+            x += gridSpacing
+        }
+        
+        // Horizontal lines (perspective effect)
+        var y = size.height - (gridOffset % gridSpacing)
+        var lineWidth = 1f
+        while (y > size.height * 0.3f) {
+            val alpha = lineAlpha * (y / size.height)
+            drawLine(
+                color = PhantomPurple.copy(alpha = alpha),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = lineWidth
+            )
+            y -= gridSpacing
+            lineWidth += 0.2f
+        }
+    }
+}
+
+// ============================================================================
+// HOLOGRAPHIC ALBUM ART (Interactive - 96dp touch targets)
+// ============================================================================
+@Composable
+fun HolographicAlbumArt(
+    albumArtPath: String?,
+    isPlaying: Boolean,
+    onSwipeLeft: () -> Unit,
+    onSwipeRight: () -> Unit,
+    onTap: () -> Unit,
+    onDoubleTap: () -> Unit
+) {
+    var swipeOffset by remember { mutableStateOf(0f) }
+    var lastTapTime by remember { mutableStateOf(0L) }
+    
+    val scaleAnim by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0.95f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "album_scale"
+    )
+    
+    val rotation by rememberInfiniteTransition(label = "holo_rotation").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .padding(horizontal = 32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Holographic ring
+        Canvas(modifier = Modifier
+            .fillMaxSize()
+            .rotate(rotation)
+        ) {
+            val radius = size.minDimension / 2
+            
+            // Outer ring
+            drawCircle(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        PhantomPurple,
+                        PhantomOrange,
+                        PhantomPurple,
+                        PhantomOrange,
+                        PhantomPurple
+                    )
+                ),
+                radius = radius,
+                style = Stroke(width = 4f)
+            )
+            
+            // Middle ring
+            drawCircle(
+                color = PhantomPurple.copy(alpha = 0.3f),
+                radius = radius - 10f,
+                style = Stroke(width = 2f)
+            )
+            
+            // Scan line
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        PhantomOrange,
+                        Color.Transparent
+                    )
+                ),
+                start = Offset(center.x - radius, center.y),
+                end = Offset(center.x + radius, center.y),
+                strokeWidth = 3f
+            )
+        }
+        
+        // Album artwork
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.85f)
+                .scale(scaleAnim)
+                .clip(RoundedCornerShape(16.dp))
+                .border(
+                    width = 3.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(PhantomPurple, PhantomOrange)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            when {
+                                swipeOffset > 100f -> onSwipeRight()
+                                swipeOffset < -100f -> onSwipeLeft()
+                            }
+                            swipeOffset = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            swipeOffset += dragAmount
+                        }
+                    )
+                }
+                .clickable {
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastTapTime < 300) {
+                        onDoubleTap()
+                    } else {
+                        onTap()
+                    }
+                    lastTapTime = currentTime
+                }
+        ) {
+            if (albumArtPath != null) {
+                AsyncImage(
+                    model = albumArtPath,
+                    contentDescription = "Album Art",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Cyberpunk placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    PhantomPurple.copy(alpha = 0.3f),
+                                    PhantomBlack
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp),
+                        tint = PhantomPurple.copy(alpha = 0.5f)
+                    )
+                }
+            }
+            
+            // Holographic overlay
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            PhantomPurple.copy(alpha = 0.1f),
+                            Color.Transparent,
+                            PhantomOrange.copy(alpha = 0.1f)
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
+
+// ============================================================================
+// CYBERPUNK TRACK INFO with Glitch Effect
+// ============================================================================
+@Composable
+fun CyberpunkTrackInfo(
+    title: String,
+    artist: String,
+    album: String,
+    isPlaying: Boolean
+) {
+    val glitchOffset by rememberInfiniteTransition(label = "glitch").animateFloat(
+        initialValue = 0f,
+        targetValue = if (isPlaying) 2f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(150, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glitch_offset"
+    )
+    
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Title with glitch effect
+        Box {
+            // Glitch layers (RGB split)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                color = PhantomOrange.copy(alpha = 0.3f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.offset(x = (-glitchOffset).dp, y = glitchOffset.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                color = PhantomPurple.copy(alpha = 0.3f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.offset(x = glitchOffset.dp, y = (-glitchOffset).dp)
+            )
+            // Main text
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                color = PhantomWhite,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Artist
+        Text(
+            text = artist,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = 16.sp
+            ),
+            color = PhantomPurple,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Album
+        Text(
+            text = album,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 14.sp
+            ),
+            color = PhantomWhite.copy(alpha = 0.6f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// ============================================================================
+// CYBERPUNK SPECTRUM ANALYZER
+// ============================================================================
+@Composable
+fun CyberpunkSpectrumAnalyzer(isPlaying: Boolean) {
+    val bars = remember { List(32) { Random.nextFloat() } }
+    val animatedBars = bars.map { initialHeight ->
+        rememberInfiniteTransition(label = "bar").animateFloat(
+            initialValue = initialHeight,
+            targetValue = if (isPlaying) Random.nextFloat() else 0.1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = (100..300).random(),
+                    easing = LinearEasing
+                ),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "bar_height"
+        )
+    }
+    
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF0A0A0A))
+            .border(2.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        val barWidth = size.width / bars.size
+        val maxHeight = size.height
+        
+        bars.forEachIndexed { index, _ ->
+            val barHeight = animatedBars[index].value * maxHeight
+            val x = index * barWidth
+            
+            // Glow
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        PhantomOrange.copy(alpha = 0.5f),
+                        PhantomPurple.copy(alpha = 0.3f),
+                        Color.Transparent
+                    )
+                ),
+                topLeft = Offset(x + barWidth * 0.2f, maxHeight - barHeight),
+                size = androidx.compose.ui.geometry.Size(barWidth * 0.6f, barHeight)
+            )
+            
+            // Bar
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        PhantomOrange,
+                        PhantomPurple
+                    )
+                ),
+                topLeft = Offset(x + barWidth * 0.3f, maxHeight - barHeight),
+                size = androidx.compose.ui.geometry.Size(barWidth * 0.4f, barHeight)
+            )
+        }
+    }
+}
+
+// ============================================================================
+// NEON PROGRESS BAR (Scrubable)
+// ============================================================================
+@Composable
+fun NeonProgressBar(
+    currentPosition: Long,
+    duration: Long,
+    onSeek: (Long) -> Unit
+) {
+    val progress = if (duration > 0) currentPosition.toFloat() / duration else 0f
+    
+    Column {
+        // Progress bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(PhantomWhite.copy(alpha = 0.1f))
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures { change, _ ->
+                        val seekPosition = (change.position.x / size.width * duration).toLong()
+                        onSeek(seekPosition.coerceIn(0, duration))
+                    }
+                }
+        ) {
+            // Progress fill with glow
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                PhantomPurple,
+                                PhantomOrange
+                            )
+                        )
+                    )
+                    .blur(4.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                PhantomPurple,
+                                PhantomOrange
+                            )
+                        )
+                    )
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Time labels
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = formatTime(currentPosition),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = PhantomOrange
+            )
+            Text(
+                text = formatTime(duration),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = PhantomPurple
+            )
+        }
+    }
+}
+
+// ============================================================================
+// PRIMARY CONTROLS (96dp Play, 64dp Skip)
+// ============================================================================
+@Composable
+fun CyberpunkPrimaryControls(
+    isPlaying: Boolean,
+    onPlayPause: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    val scaleAnim by animateFloatAsState(
+        targetValue = if (isPlaying) 1.05f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "play_scale"
+    )
+    
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Previous (64dp)
+        CyberpunkButton(
+            icon = Icons.Default.SkipPrevious,
+            size = 64.dp,
+            color = PhantomPurple,
+            onClick = onPrevious
+        )
+        
+        // Play/Pause (96dp) - PRIMARY
+        Box(modifier = Modifier.scale(scaleAnim)) {
+            CyberpunkButton(
+                icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                size = 96.dp,
+                color = PhantomOrange,
+                onClick = onPlayPause,
+                isPrimary = true
+            )
+        }
+        
+        // Next (64dp)
+        CyberpunkButton(
+            icon = Icons.Default.SkipNext,
+            size = 64.dp,
+            color = PhantomPurple,
+            onClick = onNext
+        )
+    }
+}
+
+// ============================================================================
+// SECONDARY CONTROLS (48dp buttons)
+// ============================================================================
+@Composable
+fun CyberpunkSecondaryControls(
+    isFavorite: Boolean,
+    onFavoriteToggle: () -> Unit,
+    onEqClick: () -> Unit,
+    onShuffleClick: () -> Unit,
+    onRepeatClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        CyberpunkIconButton(
+            icon = Icons.Default.Shuffle,
+            size = 48.dp,
+            color = PhantomPurple,
+            onClick = onShuffleClick
+        )
+        
+        CyberpunkIconButton(
+            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            size = 48.dp,
+            color = if (isFavorite) PhantomOrange else PhantomPurple,
+            onClick = onFavoriteToggle
+        )
+        
+        CyberpunkIconButton(
+            icon = Icons.Default.Equalizer,
+            size = 48.dp,
+            color = PhantomOrange,
+            onClick = onEqClick
+        )
+        
+        CyberpunkIconButton(
+            icon = Icons.Default.Repeat,
+            size = 48.dp,
+            color = PhantomPurple,
+            onClick = onRepeatClick
+        )
+    }
+}
+
+// ============================================================================
+// CYBERPUNK BUTTON (Holographic with rotating ring)
+// ============================================================================
+@Composable
+fun CyberpunkButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    size: androidx.compose.ui.unit.Dp,
+    color: Color,
+    onClick: () -> Unit,
+    isPrimary: Boolean = false
+) {
+    val rotation by rememberInfiniteTransition(label = "button_rotation").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    
+    Box(
+        modifier = Modifier.size(size),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating holographic ring
+        Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
+            drawCircle(
+                color = color.copy(alpha = 0.3f),
+                radius = size.toPx() / 2,
+                style = Stroke(width = 2f)
+            )
+            
+            // Scan line
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color.Transparent, color, Color.Transparent)
+                ),
+                start = Offset(0f, size.toPx() / 2),
+                end = Offset(size.toPx(), size.toPx() / 2),
+                strokeWidth = 2f
+            )
+        }
+        
+        // Button core
+        Box(
+            modifier = Modifier
+                .size(size * 0.85f)
+                .clip(CircleShape)
+                .background(
+                    if (isPrimary) {
+                        Brush.radialGradient(
+                            colors = listOf(color, color.copy(alpha = 0.7f))
+                        )
+                    } else {
+                        Brush.radialGradient(
+                            colors = listOf(
+                                color.copy(alpha = 0.4f),
+                                color.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+                )
+                .border(2.dp, color, CircleShape)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(size * 0.5f),
+                tint = if (isPrimary) PhantomBlack else color
+            )
+        }
+    }
+}
+
+// ============================================================================
+// CYBERPUNK ICON BUTTON (Secondary controls)
+// ============================================================================
+@Composable
+fun CyberpunkIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    size: androidx.compose.ui.unit.Dp,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        color.copy(alpha = 0.3f),
+                        Color.Transparent
+                    )
+                )
+            )
+            .border(1.dp, color.copy(alpha = 0.5f), CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(size * 0.5f)
+        )
+    }
+}
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
+@Composable
+fun PulsingRadialGlow(isPlaying: Boolean) {
+    val scale by rememberInfiniteTransition(label = "glow").animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_scale"
+    )
+    
+    val alpha by rememberInfiniteTransition(label = "glow_alpha").animateFloat(
+        initialValue = 0.1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_alpha"
+    )
+    
+    if (isPlaying) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(400.dp)
+                    .offset(y = 100.dp)
+                    .scale(scale)
+                    .blur(100.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                PhantomPurple.copy(alpha = alpha),
+                                PhantomOrange.copy(alpha = alpha * 0.5f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
         }
     }
 }
@@ -137,12 +861,11 @@ fun PlayerScreen(
 @Composable
 fun AnimatedBackgroundParticles(isPlaying: Boolean) {
     val particles = remember {
-        List(30) {
-            ParticleState(
-                x = Random.nextFloat(),
-                y = Random.nextFloat(),
-                speed = Random.nextFloat() * 0.5f + 0.2f,
-                size = Random.nextFloat() * 4f + 2f
+        List(20) {
+            Triple(
+                Random.nextFloat(),
+                Random.nextFloat(),
+                Random.nextFloat() * 0.5f + 0.2f
             )
         }
     }
@@ -160,892 +883,17 @@ fun AnimatedBackgroundParticles(isPlaying: Boolean) {
     
     if (isPlaying) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            particles.forEach { particle ->
-                val x = (particle.x + time * particle.speed) % 1f
-                val y = particle.y
+            particles.forEach { (x, y, speed) ->
+                val particleX = (x + time * speed) % 1f
+                val particleY = y
                 
                 drawCircle(
-                    color = PhantomPurple.copy(alpha = 0.3f),
-                    radius = particle.size,
-                    center = Offset(x * size.width, y * size.height)
-                )
-            }
-        }
-    }
-}
-
-data class ParticleState(
-    val x: Float,
-    val y: Float,
-    val speed: Float,
-    val size: Float
-)
-
-@Composable
-fun PulsingRadialGlow(isPlaying: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "glow")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow_scale"
-    )
-    
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.1f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow_alpha"
-    )
-    
-    if (isPlaying) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(400.dp)
-                    .offset(y = 100.dp)
-                    .scale(scale)
-                    .blur(100.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                PhantomPurple.copy(alpha = alpha),
-                                PhantomPurple.copy(alpha = alpha * 0.5f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-        }
-    }
-}
-
-@Composable
-fun HolographicAlbumArt(
-    albumArtPath: String?,
-    isPlaying: Boolean
-) {
-    val rotation by rememberInfiniteTransition(label = "rotation").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation"
-    )
-    
-    val scaleAnim by animateFloatAsState(
-        targetValue = if (isPlaying) 1f else 0.95f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "scale"
-    )
-    
-    Box(
-        modifier = Modifier
-            .size(320.dp)
-            .scale(scaleAnim),
-        contentAlignment = Alignment.Center
-    ) {
-        // Rotating Holographic Ring
-        Canvas(
-            modifier = Modifier
-                .size(340.dp)
-                .rotate(rotation)
-        ) {
-            val ringCount = 3
-            for (i in 0 until ringCount) {
-                val radius = size.minDimension / 2 - (i * 20f)
-                drawCircle(
-                    color = when (i % 3) {
-                        0 -> PhantomPurple.copy(alpha = 0.3f)
-                        1 -> PhantomPurple.copy(alpha = 0.3f)
-                        else -> PhantomOrange.copy(alpha = 0.3f)
-                    },
-                    radius = radius,
-                    style = Stroke(width = 2f)
-                )
-            }
-            
-            // Scan lines
-            for (angle in 0..360 step 30) {
-                val rad = Math.toRadians(angle.toDouble())
-                val startX = center.x + cos(rad).toFloat() * (size.minDimension / 2 - 60f)
-                val startY = center.y + sin(rad).toFloat() * (size.minDimension / 2 - 60f)
-                val endX = center.x + cos(rad).toFloat() * (size.minDimension / 2)
-                val endY = center.y + sin(rad).toFloat() * (size.minDimension / 2)
-                
-                drawLine(
-                    color = PhantomPurple.copy(alpha = 0.2f),
-                    start = Offset(startX, startY),
-                    end = Offset(endX, endY),
-                    strokeWidth = 1f
-                )
-            }
-        }
-        
-        // Album Art Core
-        Box(
-            modifier = Modifier
-                .size(280.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            PhantomDarkPurple,
-                            PhantomBlack
-                        )
-                    )
-                )
-                .border(
-                    width = 3.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            PhantomPurple,
-                            PhantomPurple,
-                            PhantomOrange,
-                            PhantomPurple
-                        )
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            albumArtPath?.let { path ->
-                AsyncImage(
-                    model = path,
-                    contentDescription = "Album Art",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-                
-                // Holographic overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    PhantomPurple.copy(alpha = 0.1f),
-                                    Color.Transparent,
-                                    PhantomPurple.copy(alpha = 0.1f)
-                                )
-                            )
-                        )
-                )
-            } ?: Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = "No Album Art",
-                modifier = Modifier.size(120.dp),
-                tint = PhantomPurple.copy(alpha = 0.3f)
-            )
-        }
-        
-        // Corner accents
-        CornerAccents()
-    }
-}
-
-@Composable
-fun BoxScope.CornerAccents() {
-    val corners = listOf(
-        Alignment.TopStart to 0f,
-        Alignment.TopEnd to 90f,
-        Alignment.BottomEnd to 180f,
-        Alignment.BottomStart to 270f
-    )
-    
-    corners.forEach { (alignment, rotation) ->
-        Canvas(
-            modifier = Modifier
-                .size(40.dp)
-                .align(alignment)
-                .rotate(rotation)
-        ) {
-            val path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(0f, 0f)
-                lineTo(size.width, 0f)
-                lineTo(size.width, size.height * 0.3f)
-                moveTo(size.width, 0f)
-                lineTo(size.width * 0.7f, 0f)
-            }
-            drawPath(
-                path = path,
-                color = PhantomPurple,
-                style = Stroke(width = 3f, cap = StrokeCap.Round)
-            )
-        }
-    }
-}
-
-@Composable
-fun GlitchTrackInfo(
-    title: String,
-    artist: String,
-    album: String,
-    isPlaying: Boolean
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        SurfaceGlass.copy(alpha = 0.3f),
-                        SurfaceGlass.copy(alpha = 0.1f)
-                    )
-                )
-            )
-            .border(
-                1.dp,
-                Brush.horizontalGradient(
-                    listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
-                ),
-                RoundedCornerShape(16.dp)
-            )
-            .padding(20.dp)
-    ) {
-        // Title with scan line effect
-        Box {
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = PhantomPurple,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            if (isPlaying) {
-                Text(
-                    text = title.uppercase(),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    ),
                     color = PhantomOrange.copy(alpha = 0.3f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.offset(x = 2.dp, y = 1.dp)
+                    radius = 3f,
+                    center = Offset(particleX * size.width, particleY * size.height)
                 )
             }
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        // Artist
-        Text(
-            text = "◢ ${artist.uppercase()} ◣",
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.5.sp
-            ),
-            color = PhantomGreen,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        // Album
-        Text(
-            text = "［ ${album.uppercase()} ］",
-            style = MaterialTheme.typography.bodyMedium.copy(
-                letterSpacing = 1.sp
-            ),
-            color = PhantomWhite.copy(alpha = 0.7f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-fun IntenseWaveformVisualizer(isPlaying: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "waveform")
-    val animatedProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "waveform_progress"
-    )
-    
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(PhantomBlack)
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(8.dp)
-    ) {
-        val width = size.width
-        val height = size.height
-        val centerY = height / 2
-        val points = 100
-        
-        for (i in 0 until points) {
-            val x = (i.toFloat() / points) * width
-            val progress = if (isPlaying) animatedProgress else 0f
-            
-            val amplitude = if (isPlaying) {
-                (sin((i + progress * 20) * 0.3).toFloat() * height * 0.4f *
-                        (0.5f + Random.nextFloat() * 0.5f))
-            } else {
-                0f
-            }
-            
-            // Outer glow
-            drawLine(
-                color = PhantomPurple.copy(alpha = 0.2f),
-                start = Offset(x, centerY - amplitude - 2f),
-                end = Offset(x, centerY + amplitude + 2f),
-                strokeWidth = 6f,
-                cap = StrokeCap.Round
-            )
-            
-            // Main line
-            drawLine(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        PhantomPurple,
-                        PhantomPurple,
-                        PhantomOrange
-                    )
-                ),
-                start = Offset(x, centerY - amplitude),
-                end = Offset(x, centerY + amplitude),
-                strokeWidth = 3f,
-                cap = StrokeCap.Round
-            )
-        }
-    }
-}
-
-@Composable
-fun ThreeDSpectrumAnalyzer(isPlaying: Boolean) {
-    val bars = remember { List(24) { mutableStateOf(Random.nextFloat()) } }
-    
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            while (true) {
-                bars.forEach { it.value = Random.nextFloat() * 0.7f + 0.3f }
-                kotlinx.coroutines.delay(50)
-            }
-        } else {
-            bars.forEach { it.value = 0f }
-        }
-    }
-    
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(PhantomBlack, PhantomDarkPurple.copy(alpha = 0.5f))
-                )
-            )
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(8.dp)
-    ) {
-        val width = size.width
-        val height = size.height
-        val barWidth = width / bars.size
-        val perspective = 0.7f
-        
-        bars.forEachIndexed { index, heightState ->
-            val targetHeight = if (isPlaying) heightState.value else 0f
-            
-            val x = index * barWidth
-            val barHeight = targetHeight * height
-            
-            // 3D perspective effect
-            val bottomWidth = barWidth * perspective
-            val perspectiveOffset = (barWidth - bottomWidth) / 2
-            
-            // Shadow
-            drawRect(
-                color = Color.Black.copy(alpha = 0.5f),
-                topLeft = Offset(x + perspectiveOffset + 2f, height - 2f),
-                size = androidx.compose.ui.geometry.Size(bottomWidth, 2f)
-            )
-            
-            // 3D Bar
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        PhantomPurple,
-                        PhantomPurple,
-                        PhantomOrange
-                    )
-                ),
-                topLeft = Offset(x + perspectiveOffset, height - barHeight),
-                size = androidx.compose.ui.geometry.Size(bottomWidth, barHeight)
-            )
-            
-            // Top face
-            val topWidth = barWidth * 0.8f
-            drawRect(
-                color = PhantomPurple.copy(alpha = 0.8f),
-                topLeft = Offset(x + (barWidth - topWidth) / 2, height - barHeight - 3f),
-                size = androidx.compose.ui.geometry.Size(topWidth, 3f)
-            )
-            
-            // Highlight edge
-            drawLine(
-                color = PhantomPurple.copy(alpha = 0.5f),
-                start = Offset(x + perspectiveOffset, height - barHeight),
-                end = Offset(x + perspectiveOffset, height),
-                strokeWidth = 1f
-            )
-        }
-    }
-}
-
-@Composable
-fun NeonProgressBar(
-    currentPosition: Long,
-    duration: Long,
-    onSeek: (Long) -> Unit
-) {
-    val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
-    
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        SurfaceGlass.copy(alpha = 0.2f),
-                        SurfaceGlass.copy(alpha = 0.1f)
-                    )
-                )
-            )
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    ) {
-        // Progress bar with glow
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(PhantomDarkPurple)
-        ) {
-            // Glow effect
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .blur(8.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(PhantomPurple, PhantomPurple, PhantomOrange)
-                        )
-                    )
-            )
-            
-            // Solid bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(PhantomPurple, PhantomPurple, PhantomOrange)
-                        )
-                    )
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // Time display
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = formatTime(currentPosition),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomPurple
-            )
-            Text(
-                text = formatTime(duration),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = PhantomPurple
-            )
-        }
-    }
-}
-
-@Composable
-fun EnhancedVUMeters(isPlaying: Boolean) {
-    val leftLevel = remember { mutableStateOf(0.7f) }
-    val rightLevel = remember { mutableStateOf(0.65f) }
-    
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            while (true) {
-                leftLevel.value = 0.4f + Random.nextFloat() * 0.6f
-                rightLevel.value = 0.4f + Random.nextFloat() * 0.6f
-                kotlinx.coroutines.delay(30)
-            }
-        } else {
-            leftLevel.value = 0f
-            rightLevel.value = 0f
-        }
-    }
-    
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(PhantomBlack)
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        VUMeterChannel(
-            label = "L",
-            level = leftLevel.value,
-            color = PhantomPurple
-        )
-        
-        VUMeterChannel(
-            label = "R",
-            level = rightLevel.value,
-            color = PhantomOrange
-        )
-    }
-}
-
-@Composable
-fun VUMeterChannel(label: String, level: Float, color: Color) {
-    val animatedLevel by animateFloatAsState(
-        targetValue = level,
-        animationSpec = tween(30),
-        label = "vu_level"
-    )
-    
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(100.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            ),
-            color = color
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(PhantomDarkPurple)
-        ) {
-            // Glow
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animatedLevel)
-                    .fillMaxHeight()
-                    .blur(6.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(color.copy(alpha = 0.5f), color)
-                        )
-                    )
-            )
-            
-            // Solid fill
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animatedLevel)
-                    .fillMaxHeight()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(color.copy(alpha = 0.7f), color)
-                        )
-                    )
-            )
-            
-            // Peak indicator
-            if (animatedLevel > 0.8f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(animatedLevel)
-                        .fillMaxHeight()
-                        .background(PhantomWhite.copy(alpha = 0.5f))
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        Text(
-            text = "${(animatedLevel * 100).toInt()}%",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = color.copy(alpha = 0.7f)
-        )
-    }
-}
-
-@Composable
-fun HolographicPlaybackControls(
-    isPlaying: Boolean,
-    onPlayPause: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit
-) {
-    val scaleAnim by animateFloatAsState(
-        targetValue = if (isPlaying) 1.05f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "button_scale"
-    )
-    
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        SurfaceGlass.copy(alpha = 0.4f),
-                        SurfaceGlass.copy(alpha = 0.2f),
-                        SurfaceGlass.copy(alpha = 0.4f)
-                    )
-                )
-            )
-            .border(
-                2.dp,
-                Brush.horizontalGradient(
-                    listOf(PhantomPurple, PhantomPurple, PhantomOrange, PhantomPurple)
-                ),
-                RoundedCornerShape(24.dp)
-            )
-            .padding(24.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Previous Button
-        HolographicButton(
-            icon = Icons.Default.SkipPrevious,
-            buttonSize = 64.dp,
-            iconSize = 32.dp,
-            color = PhantomPurple,
-            onClick = onPrevious
-        )
-        
-        // Play/Pause Button - HUGE
-        Box(
-            modifier = Modifier.scale(scaleAnim)
-        ) {
-            HolographicButton(
-                icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                buttonSize = 96.dp,
-                iconSize = 48.dp,
-                color = PhantomPurple,
-                onClick = onPlayPause,
-                isPrimary = true
-            )
-        }
-        
-        // Next Button
-        HolographicButton(
-            icon = Icons.Default.SkipNext,
-            buttonSize = 64.dp,
-            iconSize = 32.dp,
-            color = PhantomOrange,
-            onClick = onNext
-        )
-    }
-}
-
-@Composable
-fun HolographicButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    buttonSize: androidx.compose.ui.unit.Dp,
-    iconSize: androidx.compose.ui.unit.Dp,
-    color: Color,
-    onClick: () -> Unit,
-    isPrimary: Boolean = false
-) {
-    val rotation by rememberInfiniteTransition(label = "button_rotation").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation"
-    )
-    
-    Box(
-        modifier = Modifier.size(buttonSize),
-        contentAlignment = Alignment.Center
-    ) {
-        // Rotating ring
-        Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
-            drawCircle(
-                color = color.copy(alpha = 0.3f),
-                radius = size.minDimension / 2,
-                style = Stroke(width = 2f)
-            )
-            
-            // Scan line effect
-            drawLine(
-                color = color.copy(alpha = 0.5f),
-                start = center,
-                end = Offset(center.x + size.minDimension / 2, center.y),
-                strokeWidth = 2f
-            )
-        }
-        
-        // Button core
-        Box(
-            modifier = Modifier
-                .size(buttonSize * 0.85f)
-                .clip(CircleShape)
-                .background(
-                    if (isPrimary) {
-                        Brush.radialGradient(
-                            listOf(
-                                color,
-                                color.copy(alpha = 0.7f)
-                            )
-                        )
-                    } else {
-                        Brush.radialGradient(
-                            listOf(
-                                color.copy(alpha = 0.4f),
-                                color.copy(alpha = 0.2f)
-                            )
-                        )
-                    }
-                )
-                .border(
-                    width = 2.dp,
-                    color = color,
-                    shape = CircleShape
-                )
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(iconSize),
-                tint = if (isPrimary) PhantomBlack else color
-            )
-        }
-    }
-}
-
-@Composable
-fun SecondaryControls(
-    isFavorite: Boolean,
-    onFavoriteToggle: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        SecondaryButton(
-            icon = Icons.Default.Shuffle,
-            color = PhantomPurple,
-            onClick = { }
-        )
-        
-        SecondaryButton(
-            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            color = if (isFavorite) PhantomOrange else PhantomPurple,
-            onClick = onFavoriteToggle
-        )
-        
-        SecondaryButton(
-            icon = Icons.Default.Repeat,
-            color = PhantomPurple,
-            onClick = { }
-        )
-        
-        SecondaryButton(
-            icon = Icons.Default.QueueMusic,
-            color = PhantomPurple,
-            onClick = { }
-        )
-    }
-}
-
-@Composable
-fun SecondaryButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(
-                Brush.radialGradient(
-                    listOf(
-                        color.copy(alpha = 0.3f),
-                        Color.Transparent
-                    )
-                )
-            )
-            .border(1.dp, color.copy(alpha = 0.5f), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(24.dp)
-        )
     }
 }
 
