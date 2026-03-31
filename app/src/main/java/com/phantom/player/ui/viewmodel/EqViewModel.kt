@@ -23,13 +23,14 @@ class EqViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
-    private val prefs = context.getSharedPreferences("phantom_prefs", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("phantom_eq", Context.MODE_PRIVATE)
     
+    // REAL-TIME EQ bands - updates immediately when changed
     val bands: StateFlow<List<EqBand>> = eqRepository.bands
         .stateIn(viewModelScope, SharingStarted.Eagerly, getDefaultBands())
     
     val isEnabled: StateFlow<Boolean> = eqRepository.isEnabled
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true) // Default enabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
     
     val presets: StateFlow<List<EqPreset>> = eqRepository.getAllPresets()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -37,26 +38,27 @@ class EqViewModel @Inject constructor(
     private val _currentPresetId = MutableStateFlow<Long?>(null)
     val currentPresetId: StateFlow<Long?> = _currentPresetId.asStateFlow()
     
-    // Auto EQ state persisted across screen navigations
-    private val _isAutoEqActive = MutableStateFlow(prefs.getBoolean("auto_eq_enabled", true))
+    // PERSISTENT Auto EQ state - NEVER resets
+    private val _isAutoEqActive = MutableStateFlow(prefs.getBoolean("auto_eq_active", true))
     val isAutoEqActive: StateFlow<Boolean> = _isAutoEqActive.asStateFlow()
     
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
     
     init {
-        // Enable EQ and apply Auto EQ by default
+        // Apply Auto EQ on startup if it was active
         viewModelScope.launch {
             try {
-                // Wait for audio session
-                delay(1500)
+                // Short delay for audio session
+                delay(1000)
                 
-                // Always enable EQ
+                // ALWAYS enable EQ
                 eqRepository.setEnabled(true)
                 
-                // Apply Auto EQ if it was enabled (default true)
+                // Apply Auto EQ if it's active (persisted state)
                 if (_isAutoEqActive.value) {
-                    applyAutoEQ()
+                    val autoEqBands = calculateAutoEQ()
+                    eqRepository.loadPreset(autoEqBands)
                 }
                 
                 _isInitialized.value = true
@@ -72,12 +74,13 @@ class EqViewModel @Inject constructor(
                 eqRepository.initialize(audioSessionId)
                 delay(500)
                 
-                // Reapply Auto EQ after initialization if it's active
+                // Reapply Auto EQ after audio session init
                 if (_isAutoEqActive.value) {
-                    applyAutoEQ()
+                    val autoEqBands = calculateAutoEQ()
+                    eqRepository.loadPreset(autoEqBands)
                 }
             } catch (e: Exception) {
-                // Handle silently
+                // Silent fail
             }
         }
     }
@@ -87,10 +90,10 @@ class EqViewModel @Inject constructor(
             eqRepository.setBandValue(bandIndex, value)
             _currentPresetId.value = null
             
-            // User manually adjusted - turn off Auto EQ
-            setAutoEqActive(false)
+            // User adjusted - disable Auto EQ and PERSIST that choice
+            saveAutoEqState(false)
         } catch (e: Exception) {
-            // Handle silently
+            // Silent fail
         }
     }
     
@@ -100,9 +103,9 @@ class EqViewModel @Inject constructor(
                 val bands = parsePresetBands(preset.bands)
                 eqRepository.loadPreset(bands)
                 _currentPresetId.value = preset.id
-                setAutoEqActive(false)
+                saveAutoEqState(false)
             } catch (e: Exception) {
-                // Handle silently
+                // Silent fail
             }
         }
     }
@@ -111,9 +114,9 @@ class EqViewModel @Inject constructor(
         try {
             eqRepository.resetAllBands()
             _currentPresetId.value = null
-            setAutoEqActive(false)
+            saveAutoEqState(false)
         } catch (e: Exception) {
-            // Handle silently
+            // Silent fail
         }
     }
     
@@ -121,7 +124,7 @@ class EqViewModel @Inject constructor(
         try {
             eqRepository.setEnabled(enabled)
         } catch (e: Exception) {
-            // Handle silently
+            // Silent fail
         }
     }
     
@@ -132,7 +135,7 @@ class EqViewModel @Inject constructor(
                 val presetId = eqRepository.savePreset(name, currentBands)
                 _currentPresetId.value = presetId
             } catch (e: Exception) {
-                // Handle silently
+                // Silent fail
             }
         }
     }
@@ -145,7 +148,7 @@ class EqViewModel @Inject constructor(
                     _currentPresetId.value = null
                 }
             } catch (e: Exception) {
-                // Handle silently
+                // Silent fail
             }
         }
     }
@@ -162,14 +165,14 @@ class EqViewModel @Inject constructor(
         try {
             eqRepository.useBuiltInPreset(presetIndex)
             _currentPresetId.value = null
-            setAutoEqActive(false)
+            saveAutoEqState(false)
         } catch (e: Exception) {
-            // Handle silently
+            // Silent fail
         }
     }
     
     /**
-     * Apply Auto EQ - PERSISTED across app sessions and screen navigations
+     * Apply Auto EQ and SAVE the state
      */
     fun applyAutoEQ() {
         viewModelScope.launch {
@@ -177,9 +180,9 @@ class EqViewModel @Inject constructor(
                 val autoEqBands = calculateAutoEQ()
                 eqRepository.loadPreset(autoEqBands)
                 _currentPresetId.value = null
-                setAutoEqActive(true)
+                saveAutoEqState(true)
             } catch (e: Exception) {
-                // Handle silently
+                // Silent fail
             }
         }
     }
@@ -187,35 +190,39 @@ class EqViewModel @Inject constructor(
     fun toggleAutoEQ() {
         if (_isAutoEqActive.value) {
             resetAllBands()
-            setAutoEqActive(false)
+            saveAutoEqState(false)
         } else {
             applyAutoEQ()
         }
     }
     
     /**
-     * Persist Auto EQ state to SharedPreferences
+     * CRITICAL: Save Auto EQ state to SharedPreferences
+     * This ensures it persists across screen changes and app restarts
      */
-    private fun setAutoEqActive(active: Boolean) {
+    private fun saveAutoEqState(active: Boolean) {
         _isAutoEqActive.value = active
-        prefs.edit().putBoolean("auto_eq_enabled", active).apply()
+        prefs.edit().putBoolean("auto_eq_active", active).apply()
     }
     
     /**
-     * Calculate optimal Auto EQ curve for MAXIMUM IMPACT
+     * Optimized Auto EQ curve
+     * Bass: +8/+7/+6 dB (massive thump)
+     * Mids: +3/+4 dB (vocal clarity)
+     * Highs: +4/+5 dB (sparkle and air)
      */
     private fun calculateAutoEQ(): List<EqBand> {
         return listOf(
-            EqBand(frequency = 31, value = 8.0f),    // SUB-BASS: Massive thump
-            EqBand(frequency = 63, value = 7.0f),    // BASS: Powerful punch
-            EqBand(frequency = 125, value = 6.0f),   // LOW-BASS: Warm foundation
-            EqBand(frequency = 250, value = 3.0f),   // LOW-MIDS: Body
-            EqBand(frequency = 500, value = 3.0f),   // MIDS: Vocal presence
-            EqBand(frequency = 1000, value = 4.0f),  // UPPER-MIDS: Vocal clarity
-            EqBand(frequency = 2000, value = 4.0f),  // HIGH-MIDS: Definition
-            EqBand(frequency = 4000, value = 5.0f),  // PRESENCE: Attack
-            EqBand(frequency = 8000, value = 4.0f),  // HIGH-FREQ: Air
-            EqBand(frequency = 16000, value = 3.0f)  // ULTRA-HIGH: Brilliance
+            EqBand(frequency = 31, value = 8.0f),    // SUB-BASS
+            EqBand(frequency = 63, value = 7.0f),    // BASS
+            EqBand(frequency = 125, value = 6.0f),   // LOW-BASS
+            EqBand(frequency = 250, value = 3.0f),   // LOW-MIDS
+            EqBand(frequency = 500, value = 3.0f),   // MIDS
+            EqBand(frequency = 1000, value = 4.0f),  // UPPER-MIDS
+            EqBand(frequency = 2000, value = 4.0f),  // HIGH-MIDS
+            EqBand(frequency = 4000, value = 5.0f),  // PRESENCE
+            EqBand(frequency = 8000, value = 4.0f),  // HIGH-FREQ
+            EqBand(frequency = 16000, value = 3.0f)  // ULTRA-HIGH
         )
     }
     
