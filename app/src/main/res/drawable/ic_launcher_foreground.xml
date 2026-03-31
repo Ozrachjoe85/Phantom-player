@@ -1,92 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phantom Player - Cyberpunk Retro Icon -->
+<!-- Resolution-independent vector graphic -->
+<!-- Place in: app/src/main/res/drawable/ic_launcher_foreground.xml -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <group android:translateX="54" android:translateY="54">
+    <!-- Background glow -->
+    <path
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"
+        android:fillColor="#9D4EDD"
+        android:fillAlpha="0.2"/>
+    
+    <!-- Outer ring (holographic) -->
+    <path
+        android:pathData="M54,20C34.67,20 19,35.67 19,55C19,74.33 34.67,90 54,90C73.33,90 89,74.33 89,55C89,35.67 73.33,20 54,20ZM54,85C37.43,85 24,71.57 24,55C24,38.43 37.43,25 54,25C70.57,25 84,38.43 84,55C84,71.57 70.57,85 54,85Z"
+        android:fillColor="#00FF88"
+        android:fillAlpha="0.8"
+        android:strokeWidth="2"
+        android:strokeColor="#00FF88"/>
+    
+    <!-- Inner ring accent -->
+    <path
+        android:pathData="M54,28C39.09,28 27,40.09 27,55C27,69.91 39.09,82 54,82C68.91,82 81,69.91 81,55C81,40.09 68.91,28 54,28ZM54,78C41.3,78 31,67.7 31,55C31,42.3 41.3,32 54,32C66.7,32 77,42.3 77,55C77,67.7 66.7,78 54,78Z"
+        android:fillColor="#FF6B35"
+        android:fillAlpha="0.6"/>
+    
+    <!-- Central "P" logo - stylized Phantom -->
+    <group
+        android:translateX="54"
+        android:translateY="55">
         
-        <!-- Outer energy glow -->
+        <!-- Vertical stroke of P -->
         <path
-            android:pathData="M0,-30 Q-15,-25 -20,-15 L-25,0 Q-20,15 -10,25 L0,30 L10,25 Q20,15 25,0 L20,-15 Q15,-25 0,-30 Z"
+            android:pathData="M-10,-18L-10,18"
+            android:strokeWidth="5"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"/>
+        
+        <!-- Upper curve of P -->
+        <path
+            android:pathData="M-10,-18C-10,-18 -8,-18 -6,-18C2,-18 8,-12 8,-4C8,4 2,10 -6,10C-8,10 -10,10 -10,10"
+            android:strokeWidth="5"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round"
             android:fillColor="#9D4EDD"
             android:fillAlpha="0.3"/>
         
-        <!-- Main spectral body -->
+        <!-- Neon glow on P -->
         <path
-            android:pathData="M0,-25 Q-10,-20 -15,-10 L-18,0 Q-15,10 -8,18 L0,22 L8,18 Q15,10 18,0 L15,-10 Q10,-20 0,-25 Z"
-            android:fillColor="#00E5FF"/>
-        
-        <!-- Hood/head area -->
-        <path
-            android:pathData="M-8,-20 Q0,-25 8,-20 L10,-15 L5,-10 L0,-8 L-5,-10 L-10,-15 Z"
-            android:fillColor="#FF006E"/>
-        
-        <!-- Energy core (face) - FIXED: added dp units -->
-        <path
-            android:pathData="M6,-12 A6,6 0 1,1 -6,-12 A6,6 0 1,1 6,-12 Z"
-            android:fillColor="#00E5FF"/>
-        
-        <!-- Flowing energy tendrils -->
-        <path
-            android:pathData="M-10,15 Q-15,20 -12,25"
-            android:strokeColor="#9D4EDD"
-            android:strokeWidth="2"
+            android:pathData="M-10,-18L-10,18"
+            android:strokeWidth="8"
+            android:strokeColor="#00FF88"
             android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"/>
-        
-        <path
-            android:pathData="M10,15 Q15,20 12,25"
-            android:strokeColor="#9D4EDD"
-            android:strokeWidth="2"
-            android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"/>
-        
-        <!-- DJ hands on turntables -->
-        <path
-            android:pathData="M-15,5 L-20,12"
-            android:strokeColor="#00E5FF"
-            android:strokeWidth="2.5"
-            android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"/>
-        
-        <path
-            android:pathData="M15,5 L20,12"
-            android:strokeColor="#00E5FF"
-            android:strokeWidth="2.5"
-            android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"/>
-        
-        <!-- Left turntable platter - FIXED: circle as path -->
-        <path
-            android:pathData="M-15,15 A5,5 0 1,1 -25,15 A5,5 0 1,1 -15,15 Z"
-            android:fillColor="#1A1A24"
-            android:strokeColor="#00E5FF"
-            android:strokeWidth="1"/>
-        
-        <!-- Right turntable platter - FIXED: circle as path -->
-        <path
-            android:pathData="M25,15 A5,5 0 1,1 15,15 A5,5 0 1,1 25,15 Z"
-            android:fillColor="#1A1A24"
-            android:strokeColor="#FF006E"
-            android:strokeWidth="1"/>
-        
-        <!-- Waveform accent left -->
-        <path
-            android:pathData="M-25,-5 L-22,-8 L-20,-5 L-18,-2 L-16,-5 L-14,-8 L-12,-5"
-            android:strokeColor="#00E5FF"
-            android:strokeWidth="1"
-            android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"
-            android:strokeAlpha="0.6"/>
-        
-        <!-- Waveform accent right -->
-        <path
-            android:pathData="M12,-5 L14,-8 L16,-5 L18,-2 L20,-5 L22,-8 L25,-5"
-            android:strokeColor="#FF006E"
-            android:strokeWidth="1"
-            android:strokeLineCap="round"
-            android:fillColor="@android:color/transparent"
-            android:strokeAlpha="0.6"/>
+            android:fillAlpha="0.3"/>
     </group>
+    
+    <!-- Scan line effect (horizontal) -->
+    <path
+        android:pathData="M20,55L88,55"
+        android:strokeWidth="1.5"
+        android:strokeColor="#00D9FF"
+        android:strokeAlpha="0.6"/>
+    
+    <!-- Corner accents (cyberpunk brackets) -->
+    <!-- Top-left -->
+    <path
+        android:pathData="M35,30L30,30L30,35"
+        android:strokeWidth="2"
+        android:strokeColor="#FF6B35"
+        android:strokeLineCap="round"/>
+    
+    <!-- Top-right -->
+    <path
+        android:pathData="M73,30L78,30L78,35"
+        android:strokeWidth="2"
+        android:strokeColor="#FF6B35"
+        android:strokeLineCap="round"/>
+    
+    <!-- Bottom-left -->
+    <path
+        android:pathData="M35,80L30,80L30,75"
+        android:strokeWidth="2"
+        android:strokeColor="#FF6B35"
+        android:strokeLineCap="round"/>
+    
+    <!-- Bottom-right -->
+    <path
+        android:pathData="M73,80L78,80L78,75"
+        android:strokeWidth="2"
+        android:strokeColor="#FF6B35"
+        android:strokeLineCap="round"/>
+    
+    <!-- Orbiting particles (static in icon, animated in app) -->
+    <circle
+        android:cx="35"
+        android:cy="45"
+        android:radius="2"
+        android:fillColor="#00D9FF"/>
+    
+    <circle
+        android:cx="73"
+        android:cy="65"
+        android:radius="2"
+        android:fillColor="#FFB000"/>
+    
+    <circle
+        android:cx="45"
+        android:cy="75"
+        android:radius="1.5"
+        android:fillColor="#9D4EDD"/>
+    
+    <circle
+        android:cx="63"
+        android:cy="35"
+        android:radius="1.5"
+        android:fillColor="#FF6B35"/>
 </vector>
