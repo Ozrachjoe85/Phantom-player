@@ -4,8 +4,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,431 +24,490 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.phantom.player.data.local.database.entities.EqBand
 import com.phantom.player.ui.viewmodel.EqViewModel
+import com.phantom.player.data.repository.EqBand
 import kotlin.math.abs
 
-// RETRO-FUTURISTIC 70s/80s COLOR PALETTE
-private val RetroOrange = Color(0xFFFF6B35)  // 70s orange
-private val RetroGreen = Color(0xFF00FF88)   // CRT green
-private val RetroAmber = Color(0xFFFFB000)   // Amber display
-private val RetroBlue = Color(0xFF00B4D8)    // Electric blue
-private val RetroRed = Color(0xFFFF006E)     // Analog red
-private val RetroBlack = Color(0xFF0A0A0A)   // Deep black
-private val RetroGray = Color(0xFF2A2A2A)    // Dark gray
-private val RetroGlow = Color(0xFF39FF14)    // Neon glow
-
-enum class EqViewMode {
-    CURVE,    // Frequency response curve
-    MIXER     // Individual fader sliders
-}
+// Cyberpunk Retro Color Palette
+private val CyberGreen = Color(0xFF00FF88)
+private val CyberOrange = Color(0xFFFF6B35)
+private val CyberAmber = Color(0xFFFFB000)
+private val CyberRed = Color(0xFFFF1744)
+private val CyberBlue = Color(0xFF00D9FF)
+private val CyberPurple = Color(0xFF9D4EDD)
+private val GhostGray = Color(0xFF606060)
+private val StudioBlack = Color(0xFF0A0A0A)
 
 @Composable
 fun EqScreen(
     viewModel: EqViewModel = hiltViewModel()
 ) {
     val currentBands by viewModel.currentBands.collectAsState()
-    val originalMastering by viewModel.originalMastering.collectAsState()
-    val isEnabled by viewModel.isEnabled.collectAsState()
     val isAutoEqActive by viewModel.isAutoEqActive.collectAsState()
-    val hasSongProfile by viewModel.hasSongProfile.collectAsState()
+    val originalMastering = remember { List(10) { EqBand(0, 0f, 1.0f) } }
     
-    var viewMode by remember { mutableStateOf(EqViewMode.CURVE) }
+    var selectedView by remember { mutableStateOf(ViewMode.CURVE) }
+    var isPowerOn by remember { mutableStateOf(true) }
     
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(RetroBlack)
+            .background(StudioBlack)
     ) {
+        // Cyberpunk grid background
+        CyberpunkEqGrid()
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(24.dp)
         ) {
-            // Header with retro VU meter styling
-            RetroHeader(
-                isEnabled = isEnabled,
-                onEnabledChange = { viewModel.setEnabled(it) },
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // HEADER: Power, Auto EQ, Save, Delete
+            CyberpunkEqHeader(
+                isPowerOn = isPowerOn,
                 isAutoEqActive = isAutoEqActive,
+                onPowerToggle = { isPowerOn = !isPowerOn },
                 onAutoEqToggle = { viewModel.toggleAutoEQ() },
-                hasSongProfile = hasSongProfile,
-                onSaveProfile = { viewModel.saveSongProfile() },
-                onDeleteProfile = { viewModel.deleteSongProfile() }
+                onSave = { viewModel.saveSongProfile() },
+                onDelete = { viewModel.deleteSongProfile() }
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // MAIN VISUALIZATION AREA
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                if (isPowerOn) {
+                    when (selectedView) {
+                        ViewMode.CURVE -> {
+                            CyberpunkCurveView(
+                                currentBands = currentBands,
+                                originalMastering = originalMastering,
+                                isAutoEqActive = isAutoEqActive,
+                                onBandChange = { index, value ->
+                                    viewModel.setBandValue(index, value)
+                                }
+                            )
+                        }
+                        ViewMode.MIXER -> {
+                            CyberpunkMixerView(
+                                currentBands = currentBands,
+                                originalMastering = originalMastering,
+                                isAutoEqActive = isAutoEqActive,
+                                onBandChange = { index, value ->
+                                    viewModel.setBandValue(index, value)
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    PowerOffDisplay()
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // VIEW MODE TOGGLE
+            CyberpunkViewToggle(
+                selectedView = selectedView,
+                onViewChange = { selectedView = it }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // View mode toggle
-            RetroViewModeToggle(
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it }
-            )
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            // Main EQ display
-            when (viewMode) {
-                EqViewMode.CURVE -> {
-                    RetroCurveView(
-                        currentBands = currentBands,
-                        originalMastering = originalMastering,
-                        onBandChange = { index, value ->
-                            viewModel.setBandValue(index, value)
-                        }
-                    )
-                }
-                EqViewMode.MIXER -> {
-                    RetroMixerView(
-                        currentBands = currentBands,
-                        originalMastering = originalMastering,
-                        onBandChange = { index, value ->
-                            viewModel.setBandValue(index, value)
-                        }
-                    )
-                }
-            }
         }
     }
 }
 
+enum class ViewMode {
+    CURVE, MIXER
+}
+
+// ============================================================================
+// CYBERPUNK EQ GRID BACKGROUND
+// ============================================================================
 @Composable
-fun RetroHeader(
-    isEnabled: Boolean,
-    onEnabledChange: (Boolean) -> Unit,
-    isAutoEqActive: Boolean,
-    onAutoEqToggle: () -> Unit,
-    hasSongProfile: Boolean,
-    onSaveProfile: () -> Unit,
-    onDeleteProfile: () -> Unit
-) {
-    Column {
-        // Title with 70s styling
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "EQUALIZER",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 4.sp
+fun CyberpunkEqGrid() {
+    val infiniteTransition = rememberInfiniteTransition(label = "eq_grid")
+    val scanline by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "scanline"
+    )
+    
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        // Grid lines
+        for (i in 0..20) {
+            val y = (i / 20f) * size.height
+            drawLine(
+                color = CyberPurple.copy(alpha = 0.1f),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1f
+            )
+        }
+        
+        for (i in 0..10) {
+            val x = (i / 10f) * size.width
+            drawLine(
+                color = CyberPurple.copy(alpha = 0.1f),
+                start = Offset(x, 0f),
+                end = Offset(x, size.height),
+                strokeWidth = 1f
+            )
+        }
+        
+        // Animated scanline
+        val scanY = scanline * size.height
+        drawLine(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    CyberGreen.copy(alpha = 0.3f),
+                    Color.Transparent
                 ),
-                color = RetroOrange
-            )
-            
-            // Power switch
-            RetroSwitch(
-                checked = isEnabled,
-                onCheckedChange = onEnabledChange,
-                label = "POWER"
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // Control panel
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(RetroGray)
-                .border(2.dp, RetroOrange, RoundedCornerShape(4.dp))
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Auto EQ button
-            RetroButton(
-                text = "AUTO",
-                isActive = isAutoEqActive,
-                onClick = onAutoEqToggle,
-                color = RetroGreen
-            )
-            
-            // Save profile button
-            RetroButton(
-                text = "SAVE",
-                isActive = hasSongProfile,
-                onClick = onSaveProfile,
-                color = RetroAmber
-            )
-            
-            // Delete profile button
-            if (hasSongProfile) {
-                RetroButton(
-                    text = "DELETE",
-                    isActive = false,
-                    onClick = onDeleteProfile,
-                    color = RetroRed
-                )
-            }
-        }
+                startY = scanY - 50f,
+                endY = scanY + 50f
+            ),
+            start = Offset(0f, scanY),
+            end = Offset(size.width, scanY),
+            strokeWidth = 2f
+        )
     }
 }
 
+// ============================================================================
+// HEADER: Power, Auto EQ, Save, Delete
+// ============================================================================
 @Composable
-fun RetroSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    label: String
+fun CyberpunkEqHeader(
+    isPowerOn: Boolean,
+    isAutoEqActive: Boolean,
+    onPowerToggle: () -> Unit,
+    onAutoEqToggle: () -> Unit,
+    onSave: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(RetroGray)
-            .border(1.dp, if (checked) RetroGreen else Color.Gray, RoundedCornerShape(4.dp))
-            .padding(8.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF1A1A1A),
+                        Color(0xFF0A0A0A)
+                    )
+                )
+            )
+            .border(2.dp, CyberPurple.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // POWER
+        CyberpunkHeaderButton(
+            label = "POWER",
+            isActive = isPowerOn,
+            activeColor = CyberRed,
+            onClick = onPowerToggle
+        )
+        
+        // AUTO EQ
+        CyberpunkHeaderButton(
+            label = "AUTO EQ",
+            isActive = isAutoEqActive,
+            activeColor = CyberGreen,
+            onClick = onAutoEqToggle
+        )
+        
+        // SAVE
+        CyberpunkHeaderButton(
+            label = "SAVE",
+            isActive = false,
+            activeColor = CyberAmber,
+            onClick = onSave
+        )
+        
+        // DELETE
+        CyberpunkHeaderButton(
+            label = "DELETE",
+            isActive = false,
+            activeColor = CyberRed,
+            onClick = onDelete
+        )
+    }
+}
+
+@Composable
+fun CyberpunkHeaderButton(
+    label: String,
+    isActive: Boolean,
+    activeColor: Color,
+    onClick: () -> Unit
+) {
+    val glowAlpha by rememberInfiniteTransition(label = "glow").animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_alpha"
+    )
+    
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        // LED indicator
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isActive) {
+                        activeColor.copy(alpha = glowAlpha)
+                    } else {
+                        GhostGray.copy(alpha = 0.3f)
+                    }
+                )
+                .border(
+                    1.dp,
+                    if (isActive) activeColor else GhostGray.copy(alpha = 0.5f),
+                    CircleShape
+                )
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Label
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
+                fontSize = 10.sp,
                 letterSpacing = 1.sp
             ),
-            color = if (checked) RetroGreen else Color.Gray
-        )
-        
-        Spacer(modifier = Modifier.width(8.dp))
-        
-        Box(
-            modifier = Modifier
-                .size(32.dp, 20.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(if (checked) RetroGreen.copy(alpha = 0.3f) else Color.DarkGray)
-                .border(1.dp, if (checked) RetroGreen else Color.Gray, RoundedCornerShape(10.dp))
-                .pointerInput(Unit) {
-                    detectTapGestures { onCheckedChange(!checked) }
-                },
-            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(if (checked) RetroGreen else Color.Gray)
-            )
-        }
-    }
-}
-
-@Composable
-fun RetroButton(
-    text: String,
-    isActive: Boolean,
-    onClick: () -> Unit,
-    color: Color
-) {
-    Box(
-        modifier = Modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(if (isActive) color.copy(alpha = 0.3f) else RetroGray)
-            .border(
-                2.dp,
-                if (isActive) color else Color.Gray,
-                RoundedCornerShape(4.dp)
-            )
-            .pointerInput(Unit) {
-                detectTapGestures { onClick() }
-            }
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            ),
-            color = if (isActive) color else Color.Gray
+            color = if (isActive) activeColor else GhostGray,
+            textAlign = TextAlign.Center
         )
     }
 }
 
+// ============================================================================
+// CURVE VIEW: Oscilloscope-style with ghost overlay
+// ============================================================================
 @Composable
-fun RetroViewModeToggle(
-    viewMode: EqViewMode,
-    onViewModeChange: (EqViewMode) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(RetroGray)
-            .border(2.dp, RetroAmber, RoundedCornerShape(4.dp)),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        listOf(EqViewMode.CURVE to "CURVE", EqViewMode.MIXER to "MIXER").forEach { (mode, label) ->
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(if (viewMode == mode) RetroAmber.copy(alpha = 0.3f) else Color.Transparent)
-                    .pointerInput(Unit) {
-                        detectTapGestures { onViewModeChange(mode) }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 3.sp
-                    ),
-                    color = if (viewMode == mode) RetroAmber else Color.Gray
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RetroCurveView(
+fun CyberpunkCurveView(
     currentBands: List<EqBand>,
     originalMastering: List<EqBand>,
+    isAutoEqActive: Boolean,
     onBandChange: (Int, Float) -> Unit
 ) {
+    // Animate bands when Auto EQ activates
+    val animatedBands = currentBands.mapIndexed { index, band ->
+        val targetValue by animateFloatAsState(
+            targetValue = band.value,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
+            label = "band_$index"
+        )
+        EqBand(band.frequency, targetValue, band.q)
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF0A0A0A))
-            .border(3.dp, RetroGreen, RoundedCornerShape(8.dp))
-            .padding(16.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(StudioBlack)
+            .border(3.dp, CyberGreen.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .padding(24.dp)
     ) {
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val width = size.width
             val height = size.height
             val centerY = height / 2
             val spacing = width / (currentBands.size - 1)
             
-            // Draw grid lines (retro oscilloscope style)
-            for (i in 0..10) {
-                val y = (i / 10f) * height
+            // Draw grid (oscilloscope style)
+            for (i in 0..12) {
+                val y = (i / 12f) * height
+                val alpha = if (i == 6) 0.3f else 0.1f  // Center line brighter
                 drawLine(
-                    color = RetroGreen.copy(alpha = 0.1f),
+                    color = CyberGreen.copy(alpha = alpha),
                     start = Offset(0f, y),
                     end = Offset(width, y),
-                    strokeWidth = 1f
+                    strokeWidth = if (i == 6) 2f else 1f
                 )
             }
             
             for (i in currentBands.indices) {
                 val x = i * spacing
                 drawLine(
-                    color = RetroGreen.copy(alpha = 0.1f),
+                    color = CyberGreen.copy(alpha = 0.1f),
                     start = Offset(x, 0f),
                     end = Offset(x, height),
                     strokeWidth = 1f
                 )
             }
             
-            // Draw zero line (original mastering baseline)
-            drawLine(
-                color = RetroAmber.copy(alpha = 0.3f),
-                start = Offset(0f, centerY),
-                end = Offset(width, centerY),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round
-            )
-            
-            // GHOST OVERLAY - Original mastering (always flat at center)
+            // GHOST OVERLAY: Original mastering (flat at 0dB)
             val ghostPath = Path()
             ghostPath.moveTo(0f, centerY)
-            for (i in originalMastering.indices) {
-                val x = i * spacing
-                val normalizedValue = originalMastering[i].value / 12f
-                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
-                if (i == 0) ghostPath.moveTo(x, y) else ghostPath.lineTo(x, y)
-            }
+            ghostPath.lineTo(width, centerY)
             
             drawPath(
                 path = ghostPath,
-                color = RetroGray.copy(alpha = 0.6f),
-                style = Stroke(width = 4f, cap = StrokeCap.Round)
+                color = GhostGray.copy(alpha = 0.6f),
+                style = Stroke(
+                    width = 3f,
+                    cap = StrokeCap.Round,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                        floatArrayOf(10f, 10f)
+                    )
+                )
             )
             
-            // Current EQ curve with glow effect
+            // CURRENT EQ CURVE with glow
             val currentPath = Path()
-            for (i in currentBands.indices) {
-                val x = i * spacing
-                val normalizedValue = currentBands[i].value / 12f
-                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
-                if (i == 0) currentPath.moveTo(x, y) else currentPath.lineTo(x, y)
-            }
-            
-            // Glow
-            drawPath(
-                path = currentPath,
-                color = RetroGreen.copy(alpha = 0.4f),
-                style = Stroke(width = 12f, cap = StrokeCap.Round)
-            )
-            
-            // Solid line
-            drawPath(
-                path = currentPath,
-                color = RetroGreen,
-                style = Stroke(width = 4f, cap = StrokeCap.Round)
-            )
-            
-            // Draw points
-            currentBands.forEachIndexed { index, band ->
+            animatedBands.forEachIndexed { index, band ->
                 val x = index * spacing
                 val normalizedValue = band.value / 12f
                 val y = centerY - (normalizedValue * (height / 2) * 0.9f)
                 
-                // Glow
+                if (index == 0) {
+                    currentPath.moveTo(x, y)
+                } else {
+                    // Bezier curve for smooth transitions
+                    val prevX = (index - 1) * spacing
+                    val prevBand = animatedBands[index - 1]
+                    val prevNormalized = prevBand.value / 12f
+                    val prevY = centerY - (prevNormalized * (height / 2) * 0.9f)
+                    
+                    val controlX1 = prevX + spacing * 0.5f
+                    val controlX2 = x - spacing * 0.5f
+                    
+                    currentPath.cubicTo(
+                        controlX1, prevY,
+                        controlX2, y,
+                        x, y
+                    )
+                }
+            }
+            
+            // Glow layer
+            drawPath(
+                path = currentPath,
+                color = CyberGreen.copy(alpha = 0.4f),
+                style = Stroke(width = 16f, cap = StrokeCap.Round)
+            )
+            
+            // Solid curve
+            drawPath(
+                path = currentPath,
+                color = CyberGreen,
+                style = Stroke(width = 4f, cap = StrokeCap.Round)
+            )
+            
+            // Draw control points
+            animatedBands.forEachIndexed { index, band ->
+                val x = index * spacing
+                val normalizedValue = band.value / 12f
+                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
+                
+                // Outer glow
                 drawCircle(
-                    color = RetroGreen.copy(alpha = 0.5f),
-                    radius = 12f,
+                    color = CyberGreen.copy(alpha = 0.5f),
+                    radius = 16f,
                     center = Offset(x, y)
                 )
                 
-                // Point
+                // Inner point
                 drawCircle(
-                    color = RetroGreen,
-                    radius = 6f,
+                    color = CyberGreen,
+                    radius = 8f,
                     center = Offset(x, y)
+                )
+                
+                // Center dot
+                drawCircle(
+                    color = StudioBlack,
+                    radius = 3f,
+                    center = Offset(x, y)
+                )
+            }
+        }
+        
+        // Frequency labels at bottom
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            currentBands.forEach { band ->
+                val freqText = when {
+                    band.frequency < 1000 -> "${band.frequency}"
+                    else -> "${band.frequency / 1000}k"
+                }
+                Text(
+                    text = freqText,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = CyberAmber,
+                    modifier = Modifier.width(30.dp),
+                    textAlign = TextAlign.Center
                 )
             }
         }
     }
 }
 
+// ============================================================================
+// MIXER VIEW: Studio faders with animated ghost positions
+// ============================================================================
 @Composable
-fun RetroMixerView(
+fun CyberpunkMixerView(
     currentBands: List<EqBand>,
     originalMastering: List<EqBand>,
+    isAutoEqActive: Boolean,
     onBandChange: (Int, Float) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .clip(RoundedCornerShape(8.dp))
-            .background(RetroBlack)
-            .border(3.dp, RetroOrange, RoundedCornerShape(8.dp))
-            .padding(16.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(StudioBlack)
+            .border(3.dp, CyberOrange.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         currentBands.forEachIndexed { index, band ->
-            RetroFader(
+            CyberpunkFader(
                 frequency = band.frequency,
                 value = band.value,
-                ghostValue = originalMastering.getOrNull(index)?.value ?: 0f,
+                ghostValue = 0f,  // Original mastering at 0dB
+                isAutoEqActive = isAutoEqActive,
                 onValueChange = { newValue ->
                     onBandChange(index, newValue)
                 }
@@ -458,91 +517,100 @@ fun RetroMixerView(
 }
 
 @Composable
-fun RetroFader(
+fun CyberpunkFader(
     frequency: Int,
     value: Float,
     ghostValue: Float,
+    isAutoEqActive: Boolean,
     onValueChange: (Float) -> Unit
 ) {
-    var isDragging by remember { mutableStateOf(false) }
+    // Animate fader when Auto EQ activates
+    val animatedValue by animateFloatAsState(
+        targetValue = value,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "fader_$frequency"
+    )
+    
+    val normalized = (animatedValue + 12f) / 24f  // -12 to +12 → 0 to 1
+    val ghostNormalized = (ghostValue + 12f) / 24f
     
     Column(
-        modifier = Modifier
-            .width(32.dp)
-            .fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(32.dp)
     ) {
         // dB value display
         Text(
-            text = String.format("%+.0f", value),
+            text = String.format("%+.1f", animatedValue),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp
             ),
-            color = if (isDragging) RetroGlow else RetroGreen,
+            color = if (animatedValue > 0) CyberOrange else if (animatedValue < 0) CyberBlue else CyberGreen,
             textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         
         // Fader track
         Box(
             modifier = Modifier
-                .width(32.dp)
+                .width(8.dp)
                 .weight(1f)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFF1A1A1A))
+                .border(1.dp, CyberOrange.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, dragAmount ->
+                        val delta = -dragAmount / size.height * 24f
+                        val newValue = (value + delta).coerceIn(-12f, 12f)
+                        onValueChange(newValue)
+                    }
+                }
         ) {
-            // Track background
-            Box(
-                modifier = Modifier
-                    .width(8.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.Center)
-                    .background(RetroGray)
-                    .border(1.dp, Color.Gray)
-            )
-            
-            // Ghost fader position (original mastering)
-            val ghostNormalized = (ghostValue + 12f) / 24f
+            // Ghost position indicator (0dB line)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
-                    .align(Alignment.Center)
-                    .offset(y = (-ghostNormalized * 100).dp)
-                    .background(RetroGray.copy(alpha = 0.5f))
-                    .border(1.dp, Color.DarkGray)
+                    .height(2.dp)
+                    .align(Alignment.TopStart)
+                    .offset(y = ((1f - ghostNormalized) * this@Box.constraints.maxHeight / density.density).dp)
+                    .background(GhostGray.copy(alpha = 0.6f))
             )
             
-            // Current fader position
-            val normalized = (value + 12f) / 24f
-            
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxSize()
+            // Current fader knob
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .align(Alignment.TopStart)
+                    .offset(y = ((1f - normalized) * (this@Box.constraints.maxHeight - 24.dp.toPx()) / density.density).dp)
             ) {
-                val maxHeightPx = constraints.maxHeight.toFloat()
-                val density = LocalDensity.current
-                
+                // Knob glow
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(12.dp)
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(CyberOrange.copy(alpha = 0.5f))
+                )
+                
+                // Knob body
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(0.8f)
                         .align(Alignment.Center)
-                        .offset(y = (-(normalized - 0.5f) * maxHeightPx / density.density).dp)
+                        .clip(CircleShape)
                         .background(
-                            if (isDragging) RetroGlow else RetroOrange,
-                            RoundedCornerShape(2.dp)
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    CyberOrange,
+                                    CyberOrange.copy(alpha = 0.7f)
+                                )
+                            )
                         )
-                        .border(2.dp, if (isDragging) Color.White else RetroAmber, RoundedCornerShape(2.dp))
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { isDragging = true },
-                                onDragEnd = { isDragging = false }
-                            ) { change, dragAmount ->
-                                change.consume()
-                                val delta = -(dragAmount.y / maxHeightPx) * 24f
-                                val newValue = (value + delta).coerceIn(-12f, 12f)
-                                onValueChange(newValue)
-                            }
-                        }
+                        .border(1.dp, CyberAmber, CircleShape)
                 )
             }
         }
@@ -550,16 +618,101 @@ fun RetroFader(
         Spacer(modifier = Modifier.height(8.dp))
         
         // Frequency label
+        val freqText = when {
+            frequency < 1000 -> "$frequency"
+            else -> "${frequency / 1000}k"
+        }
         Text(
-            text = when {
-                frequency >= 1000 -> "${frequency / 1000}k"
-                else -> "$frequency"
-            },
+            text = freqText,
             style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Bold
             ),
-            color = RetroAmber,
+            color = CyberAmber,
             textAlign = TextAlign.Center
+        )
+    }
+}
+
+// ============================================================================
+// VIEW MODE TOGGLE
+// ============================================================================
+@Composable
+fun CyberpunkViewToggle(
+    selectedView: ViewMode,
+    onViewChange: (ViewMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF1A1A1A))
+            .border(2.dp, CyberPurple.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        ViewMode.values().forEach { mode ->
+            val isSelected = selectedView == mode
+            
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (isSelected) {
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    CyberOrange,
+                                    CyberPurple
+                                )
+                            )
+                        } else {
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Transparent
+                                )
+                            )
+                        }
+                    )
+                    .clickable { onViewChange(mode) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = mode.name,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 14.sp,
+                        letterSpacing = 2.sp
+                    ),
+                    color = if (isSelected) StudioBlack else GhostGray
+                )
+            }
+        }
+    }
+}
+
+// ============================================================================
+// POWER OFF DISPLAY
+// ============================================================================
+@Composable
+fun PowerOffDisplay() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+            .background(StudioBlack)
+            .border(3.dp, GhostGray.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "SYSTEM OFFLINE",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 4.sp
+            ),
+            color = GhostGray.copy(alpha = 0.3f)
         )
     }
 }
