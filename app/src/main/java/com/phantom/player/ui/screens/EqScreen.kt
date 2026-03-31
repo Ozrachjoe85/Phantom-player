@@ -4,11 +4,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,929 +18,567 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.phantom.player.data.local.database.entities.EqBand
-import com.phantom.player.ui.theme.*
 import com.phantom.player.ui.viewmodel.EqViewModel
 import kotlin.math.abs
-import kotlin.math.pow
+
+// RETRO-FUTURISTIC 70s/80s COLOR PALETTE
+private val RetroOrange = Color(0xFFFF6B35)  // 70s orange
+private val RetroGreen = Color(0xFF00FF88)   // CRT green
+private val RetroAmber = Color(0xFFFFB000)   // Amber display
+private val RetroBlue = Color(0xFF00B4D8)    // Electric blue
+private val RetroRed = Color(0xFFFF006E)     // Analog red
+private val RetroBlack = Color(0xFF0A0A0A)   // Deep black
+private val RetroGray = Color(0xFF2A2A2A)    // Dark gray
+private val RetroGlow = Color(0xFF39FF14)    // Neon glow
 
 enum class EqViewMode {
-    CURVE, FADERS
+    CURVE,    // Frequency response curve
+    MIXER     // Individual fader sliders
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EqScreen(
     viewModel: EqViewModel = hiltViewModel()
 ) {
-    val bands by viewModel.bands.collectAsState()
+    val currentBands by viewModel.currentBands.collectAsState()
+    val originalMastering by viewModel.originalMastering.collectAsState()
     val isEnabled by viewModel.isEnabled.collectAsState()
-    var viewMode by remember { mutableStateOf(EqViewMode.CURVE) }
-    var autoEqEnabled by remember { mutableStateOf(false) }
+    val isAutoEqActive by viewModel.isAutoEqActive.collectAsState()
+    val hasSongProfile by viewModel.hasSongProfile.collectAsState()
     
-    LaunchedEffect(Unit) {
-        viewModel.initialize(0)
-    }
+    var viewMode by remember { mutableStateOf(EqViewMode.CURVE) }
     
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PhantomBlack)
+            .background(RetroBlack)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Top Control Panel
-            EqControlPanel(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Header with retro VU meter styling
+            RetroHeader(
                 isEnabled = isEnabled,
                 onEnabledChange = { viewModel.setEnabled(it) },
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it },
-                autoEqEnabled = autoEqEnabled,
-                onAutoEqChange = { autoEqEnabled = it },
-                onReset = { viewModel.resetAllBands() }
+                isAutoEqActive = isAutoEqActive,
+                onAutoEqToggle = { viewModel.toggleAutoEQ() },
+                hasSongProfile = hasSongProfile,
+                onSaveProfile = { viewModel.saveSongProfile() },
+                onDeleteProfile = { viewModel.deleteSongProfile() }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            if (bands.isNotEmpty()) {
-                when (viewMode) {
-                    EqViewMode.CURVE -> {
-                        FrequencyCurveView(
-                            bands = bands,
-                            autoEqEnabled = autoEqEnabled,
-                            onBandValueChange = { index, value ->
-                                viewModel.setBandValue(index, value)
-                            }
-                        )
-                    }
-                    EqViewMode.FADERS -> {
-                        FadersView(
-                            bands = bands,
-                            autoEqEnabled = autoEqEnabled,
-                            onBandValueChange = { index, value ->
-                                viewModel.setBandValue(index, value)
-                            }
-                        )
-                    }
+            // View mode toggle
+            RetroViewModeToggle(
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it }
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Main EQ display
+            when (viewMode) {
+                EqViewMode.CURVE -> {
+                    RetroCurveView(
+                        currentBands = currentBands,
+                        originalMastering = originalMastering,
+                        onBandChange = { index, value ->
+                            viewModel.setBandValue(index, value)
+                        }
+                    )
                 }
-            } else {
-                InitializingEqState()
+                EqViewMode.MIXER -> {
+                    RetroMixerView(
+                        currentBands = currentBands,
+                        originalMastering = originalMastering,
+                        onBandChange = { index, value ->
+                            viewModel.setBandValue(index, value)
+                        }
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Preset Panel
-            EqPresetPanel(viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun EqControlPanel(
+fun RetroHeader(
     isEnabled: Boolean,
     onEnabledChange: (Boolean) -> Unit,
-    viewMode: EqViewMode,
-    onViewModeChange: (EqViewMode) -> Unit,
-    autoEqEnabled: Boolean,
-    onAutoEqChange: (Boolean) -> Unit,
-    onReset: () -> Unit
+    isAutoEqActive: Boolean,
+    onAutoEqToggle: () -> Unit,
+    hasSongProfile: Boolean,
+    onSaveProfile: () -> Unit,
+    onDeleteProfile: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        SurfaceGlass.copy(alpha = 0.4f),
-                        SurfaceGlass.copy(alpha = 0.2f)
-                    )
-                )
-            )
-            .border(
-                1.dp,
-                Brush.horizontalGradient(
-                    listOf(PhantomPurple.copy(alpha = 0.5f), PhantomPurple.copy(alpha = 0.3f))
-                ),
-                RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Column {
-            // Power and Mode Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Power Switch
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "EQUALIZER",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
-                        ),
-                        color = if (isEnabled) PhantomPurple else PhantomWhite.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    PowerSwitch(
-                        isOn = isEnabled,
-                        onToggle = onEnabledChange
-                    )
-                }
-                
-                // Reset Button
-                IconButton(onClick = onReset) {
-                    Icon(Icons.Default.Refresh, "Reset", tint = PhantomOrange)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // View Mode Toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ModeToggleButton(
-                    label = "CURVE",
-                    icon = Icons.Default.ShowChart,
-                    isSelected = viewMode == EqViewMode.CURVE,
-                    onClick = { onViewModeChange(EqViewMode.CURVE) },
-                    modifier = Modifier.weight(1f)
-                )
-                
-                ModeToggleButton(
-                    label = "FADERS",
-                    icon = Icons.Default.Tune,
-                    isSelected = viewMode == EqViewMode.FADERS,
-                    onClick = { onViewModeChange(EqViewMode.FADERS) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Auto EQ Toggle
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (autoEqEnabled) {
-                            Brush.horizontalGradient(
-                                listOf(PhantomPurple.copy(alpha = 0.3f), PhantomOrange.copy(alpha = 0.3f))
-                            )
-                        } else {
-                            Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-                        }
-                    )
-                    .border(
-                        1.dp,
-                        if (autoEqEnabled) PhantomOrange else PhantomPurple.copy(alpha = 0.3f),
-                        RoundedCornerShape(12.dp)
-                    )
-                    .clickable { onAutoEqChange(!autoEqEnabled) }
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.AutoAwesome,
-                        null,
-                        tint = if (autoEqEnabled) PhantomOrange else PhantomPurple,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "AUTO EQ",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = if (autoEqEnabled) PhantomWhite else PhantomPurple
-                    )
-                }
-                
-                Switch(
-                    checked = autoEqEnabled,
-                    onCheckedChange = onAutoEqChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = PhantomOrange,
-                        checkedTrackColor = PhantomPurple.copy(alpha = 0.5f),
-                        uncheckedThumbColor = PhantomPurple,
-                        uncheckedTrackColor = PhantomDarkPurple
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun PowerSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
-    val glowAnimation = rememberInfiniteTransition(label = "power_glow")
-    val glowAlpha by glowAnimation.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow"
-    )
-    
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(
-                if (isOn) {
-                    Brush.radialGradient(
-                        listOf(
-                            PhantomPurple.copy(alpha = glowAlpha),
-                            PhantomPurple.copy(alpha = 0.3f)
-                        )
-                    )
-                } else {
-                    Brush.radialGradient(
-                        listOf(
-                            PhantomPurple.copy(alpha = 0.3f),
-                            Color.Transparent
-                        )
-                    )
-                }
-            )
-            .border(2.dp, if (isOn) PhantomPurple else PhantomPurple.copy(alpha = 0.5f), CircleShape)
-            .clickable { onToggle(!isOn) },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            Icons.Default.Power,
-            contentDescription = "Power",
-            tint = if (isOn) PhantomPurple else PhantomPurple.copy(alpha = 0.5f),
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-@Composable
-fun ModeToggleButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isSelected) {
-                    Brush.horizontalGradient(
-                        listOf(PhantomPurple.copy(alpha = 0.3f), PhantomPurple.copy(alpha = 0.3f))
-                    )
-                } else {
-                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-                }
-            )
-            .border(
-                1.dp,
-                if (isSelected) PhantomPurple else PhantomPurple.copy(alpha = 0.3f),
-                RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                icon,
-                null,
-                tint = if (isSelected) PhantomPurple else PhantomPurple,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+    Column {
+        // Title with 70s styling
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                label,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                text = "EQUALIZER",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 4.sp
                 ),
-                color = if (isSelected) PhantomWhite else PhantomPurple
+                color = RetroOrange
+            )
+            
+            // Power switch
+            RetroSwitch(
+                checked = isEnabled,
+                onCheckedChange = onEnabledChange,
+                label = "POWER"
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Control panel
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(RetroGray)
+                .border(2.dp, RetroOrange, RoundedCornerShape(4.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Auto EQ button
+            RetroButton(
+                text = "AUTO",
+                isActive = isAutoEqActive,
+                onClick = onAutoEqToggle,
+                color = RetroGreen
+            )
+            
+            // Save profile button
+            RetroButton(
+                text = "SAVE",
+                isActive = hasSongProfile,
+                onClick = onSaveProfile,
+                color = RetroAmber
+            )
+            
+            // Delete profile button
+            if (hasSongProfile) {
+                RetroButton(
+                    text = "DELETE",
+                    isActive = false,
+                    onClick = onDeleteProfile,
+                    color = RetroRed
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RetroSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    label: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(RetroGray)
+            .border(1.dp, if (checked) RetroGreen else Color.Gray, RoundedCornerShape(4.dp))
+            .padding(8.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            ),
+            color = if (checked) RetroGreen else Color.Gray
+        )
+        
+        Spacer(modifier = Modifier.width(8.dp))
+        
+        Box(
+            modifier = Modifier
+                .size(32.dp, 20.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (checked) RetroGreen.copy(alpha = 0.3f) else Color.DarkGray)
+                .border(1.dp, if (checked) RetroGreen else Color.Gray, RoundedCornerShape(10.dp))
+                .pointerInput(Unit) {
+                    detectTapGestures { onCheckedChange(!checked) }
+                },
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(if (checked) RetroGreen else Color.Gray)
             )
         }
     }
 }
 
 @Composable
-fun FrequencyCurveView(
-    bands: List<EqBand>,
-    autoEqEnabled: Boolean,
-    onBandValueChange: (Int, Float) -> Unit
+fun RetroButton(
+    text: String,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    color: Color
 ) {
-    // Simulate Auto EQ target curve
-    val autoEqBands = remember {
-        listOf(
-            EqBand(31, 3.5f),
-            EqBand(62, 2.0f),
-            EqBand(125, 0f),
-            EqBand(250, -1.5f),
-            EqBand(500, -0.5f),
-            EqBand(1000, 1.0f),
-            EqBand(2000, 2.5f),
-            EqBand(4000, 1.5f),
-            EqBand(8000, 0.5f),
-            EqBand(16000, -1.0f)
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(if (isActive) color.copy(alpha = 0.3f) else RetroGray)
+            .border(
+                2.dp,
+                if (isActive) color else Color.Gray,
+                RoundedCornerShape(4.dp)
+            )
+            .pointerInput(Unit) {
+                detectTapGestures { onClick() }
+            }
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp
+            ),
+            color = if (isActive) color else Color.Gray
         )
     }
-    
-    // Animated transition for Auto EQ
-    val animatedBands = bands.mapIndexed { index, band ->
-        val targetValue = if (autoEqEnabled && index < autoEqBands.size) {
-            autoEqBands[index].value
-        } else {
-            band.value
+}
+
+@Composable
+fun RetroViewModeToggle(
+    viewMode: EqViewMode,
+    onViewModeChange: (EqViewMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(RetroGray)
+            .border(2.dp, RetroAmber, RoundedCornerShape(4.dp)),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        listOf(EqViewMode.CURVE to "CURVE", EqViewMode.MIXER to "MIXER").forEach { (mode, label) ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(if (viewMode == mode) RetroAmber.copy(alpha = 0.3f) else Color.Transparent)
+                    .pointerInput(Unit) {
+                        detectTapGestures { onViewModeChange(mode) }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 3.sp
+                    ),
+                    color = if (viewMode == mode) RetroAmber else Color.Gray
+                )
+            }
         }
-        
-        val animatedValue by animateFloatAsState(
-            targetValue = targetValue,
-            animationSpec = tween(800, easing = FastOutSlowInEasing),
-            label = "eq_band_$index"
-        )
-        
-        band.copy(value = animatedValue)
     }
-    
+}
+
+@Composable
+fun RetroCurveView(
+    currentBands: List<EqBand>,
+    originalMastering: List<EqBand>,
+    onBandChange: (Int, Float) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(350.dp)
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(PhantomBlack)
-            .border(2.dp, PhantomDarkPurple, RoundedCornerShape(20.dp))
+            .weight(1f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF0A0A0A))
+            .border(3.dp, RetroGreen, RoundedCornerShape(8.dp))
+            .padding(16.dp)
     ) {
-        // Oscilloscope Grid Background
-        OscilloscopeGrid()
-        
-        // Original/Stock EQ Curve (dashed)
-        if (autoEqEnabled) {
-            FrequencyCurvePath(
-                bands = bands,
-                color = PhantomOrange.copy(alpha = 0.5f),
-                isDashed = true,
-                label = "ORIGINAL"
-            )
-        }
-        
-        // Auto EQ Target Curve (dashed)
-        if (autoEqEnabled) {
-            FrequencyCurvePath(
-                bands = autoEqBands,
-                color = PhantomPurple.copy(alpha = 0.6f),
-                isDashed = true,
-                label = "AUTO EQ TARGET"
-            )
-        }
-        
-        // Current EQ Curve (solid, interactive)
-        FrequencyCurvePath(
-            bands = animatedBands,
-            color = PhantomPurple,
-            isDashed = false,
-            label = "CURRENT EQ",
-            onBandValueChange = if (!autoEqEnabled) onBandValueChange else null
-        )
-        
-        // Legend
-        CurveLegend(autoEqEnabled = autoEqEnabled)
-    }
-}
-
-@Composable
-fun BoxScope.OscilloscopeGrid() {
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
-        
-        // Horizontal grid lines
-        for (i in 0..4) {
-            val y = (height / 4) * i
-            val alpha = if (i == 2) 0.4f else 0.15f
-            drawLine(
-                color = PhantomPurple.copy(alpha = alpha),
-                start = Offset(0f, y),
-                end = Offset(width, y),
-                strokeWidth = if (i == 2) 2f else 1f,
-                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                    intervals = floatArrayOf(10f, 10f)
-                )
-            )
-        }
-        
-        // Vertical grid lines
-        for (i in 0..10) {
-            val x = (width / 10) * i
-            drawLine(
-                color = PhantomPurple.copy(alpha = 0.1f),
-                start = Offset(x, 0f),
-                end = Offset(x, height),
-                strokeWidth = 1f,
-                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                    intervals = floatArrayOf(10f, 10f)
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun BoxScope.FrequencyCurvePath(
-    bands: List<EqBand>,
-    color: Color,
-    isDashed: Boolean,
-    label: String,
-    onBandValueChange: ((Int, Float) -> Unit)? = null
-) {
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 60.dp, end = 20.dp, top = 20.dp, bottom = 40.dp)
-            .then(
-                if (onBandValueChange != null) {
-                    Modifier.pointerInput(bands) {
-                        detectDragGestures { change, _ ->
-                            val x = change.position.x
-                            val y = change.position.y
-                            
-                            val index = ((x / size.width) * bands.size).toInt().coerceIn(0, bands.size - 1)
-                            val dbValue = 12f - ((y / size.height) * 24f)
-                            val clampedValue = dbValue.coerceIn(-12f, 12f)
-                            
-                            onBandValueChange(index, clampedValue)
-                        }
-                    }
-                } else Modifier
-            )
-    ) {
-        if (bands.isEmpty()) return@Canvas
-        
-        val width = size.width
-        val height = size.height
-        val stepX = width / (bands.size - 1)
-        
-        // Draw filled area under curve
-        val path = Path().apply {
-            moveTo(0f, height)
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val width = size.width
+            val height = size.height
+            val centerY = height / 2
+            val spacing = width / (currentBands.size - 1)
             
-            bands.forEachIndexed { index, band ->
-                val x = index * stepX
-                val normalizedValue = (band.value + 12f) / 24f
-                val y = height - (normalizedValue * height)
-                
-                if (index == 0) {
-                    lineTo(x, y)
-                } else {
-                    lineTo(x, y)
-                }
+            // Draw grid lines (retro oscilloscope style)
+            for (i in 0..10) {
+                val y = (i / 10f) * height
+                drawLine(
+                    color = RetroGreen.copy(alpha = 0.1f),
+                    start = Offset(0f, y),
+                    end = Offset(width, y),
+                    strokeWidth = 1f
+                )
             }
             
-            lineTo(width, height)
-            close()
-        }
-        
-        // Fill gradient
-        drawPath(
-            path = path,
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    color.copy(alpha = 0.3f),
-                    Color.Transparent
+            for (i in currentBands.indices) {
+                val x = i * spacing
+                drawLine(
+                    color = RetroGreen.copy(alpha = 0.1f),
+                    start = Offset(x, 0f),
+                    end = Offset(x, height),
+                    strokeWidth = 1f
                 )
-            )
-        )
-        
-        // Draw curve line
-        val curvePath = Path().apply {
-            bands.forEachIndexed { index, band ->
-                val x = index * stepX
-                val normalizedValue = (band.value + 12f) / 24f
-                val y = height - (normalizedValue * height)
-                
-                if (index == 0) {
-                    moveTo(x, y)
-                } else {
-                    lineTo(x, y)
-                }
             }
-        }
-        
-        drawPath(
-            path = curvePath,
-            color = color,
-            style = Stroke(
-                width = 3f,
-                cap = StrokeCap.Round,
-                pathEffect = if (isDashed) {
-                    androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                        intervals = floatArrayOf(15f, 10f)
-                    )
-                } else null
+            
+            // Draw zero line (original mastering baseline)
+            drawLine(
+                color = RetroAmber.copy(alpha = 0.3f),
+                start = Offset(0f, centerY),
+                end = Offset(width, centerY),
+                strokeWidth = 2f,
+                cap = StrokeCap.Round
             )
-        )
-        
-        // Draw control points (only for current EQ)
-        if (!isDashed && onBandValueChange != null) {
-            bands.forEachIndexed { index, band ->
-                val x = index * stepX
-                val normalizedValue = (band.value + 12f) / 24f
-                val y = height - (normalizedValue * height)
+            
+            // GHOST OVERLAY - Original mastering (always flat at center)
+            val ghostPath = Path()
+            ghostPath.moveTo(0f, centerY)
+            for (i in originalMastering.indices) {
+                val x = i * spacing
+                val normalizedValue = originalMastering[i].value / 12f
+                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
+                if (i == 0) ghostPath.moveTo(x, y) else ghostPath.lineTo(x, y)
+            }
+            
+            drawPath(
+                path = ghostPath,
+                color = RetroGray.copy(alpha = 0.6f),
+                style = Stroke(width = 4f, cap = StrokeCap.Round)
+            )
+            
+            // Current EQ curve with glow effect
+            val currentPath = Path()
+            for (i in currentBands.indices) {
+                val x = i * spacing
+                val normalizedValue = currentBands[i].value / 12f
+                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
+                if (i == 0) currentPath.moveTo(x, y) else currentPath.lineTo(x, y)
+            }
+            
+            // Glow
+            drawPath(
+                path = currentPath,
+                color = RetroGreen.copy(alpha = 0.4f),
+                style = Stroke(width = 12f, cap = StrokeCap.Round)
+            )
+            
+            // Solid line
+            drawPath(
+                path = currentPath,
+                color = RetroGreen,
+                style = Stroke(width = 4f, cap = StrokeCap.Round)
+            )
+            
+            // Draw points
+            currentBands.forEachIndexed { index, band ->
+                val x = index * spacing
+                val normalizedValue = band.value / 12f
+                val y = centerY - (normalizedValue * (height / 2) * 0.9f)
                 
-                // Outer glow
+                // Glow
                 drawCircle(
-                    color = color.copy(alpha = 0.3f),
+                    color = RetroGreen.copy(alpha = 0.5f),
                     radius = 12f,
                     center = Offset(x, y)
                 )
                 
-                // Inner dot
+                // Point
                 drawCircle(
-                    color = color,
+                    color = RetroGreen,
                     radius = 6f,
                     center = Offset(x, y)
                 )
                 
-                // Center dot
-                drawCircle(
-                    color = PhantomBlack,
-                    radius = 3f,
-                    center = Offset(x, y)
-                )
+                // Frequency label
+                drawContext.canvas.nativeCanvas.apply {
+                    val paint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.rgb(255, 176, 0)
+                        textSize = 28f
+                        textAlign = android.graphics.Paint.Align.CENTER
+                    }
+                    drawText("${band.frequency}", x, height - 10f, paint)
+                }
+                
+                // dB value label
+                drawContext.canvas.nativeCanvas.apply {
+                    val paint = android.graphics.Paint().apply {
+                        color = android.graphics.Color.rgb(0, 255, 136)
+                        textSize = 32f
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isFakeBoldText = true
+                    }
+                    drawText(String.format("%+.1f", band.value), x, y - 20f, paint)
+                }
             }
         }
     }
 }
 
 @Composable
-fun BoxScope.CurveLegend(autoEqEnabled: Boolean) {
-    Column(
-        modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(16.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(PhantomBlack.copy(alpha = 0.7f))
-            .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-            .padding(8.dp)
-    ) {
-        LegendItem("CURRENT EQ", PhantomPurple, false)
-        if (autoEqEnabled) {
-            LegendItem("AUTO TARGET", PhantomPurple, true)
-            LegendItem("ORIGINAL", PhantomOrange, true)
-        }
-    }
-}
-
-@Composable
-fun LegendItem(label: String, color: Color, isDashed: Boolean) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 2.dp)
-    ) {
-        Canvas(modifier = Modifier.size(width = 20.dp, height = 2.dp)) {
-            if (isDashed) {
-                drawLine(
-                    color = color,
-                    start = Offset.Zero,
-                    end = Offset(size.width, 0f),
-                    strokeWidth = 2f,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                        intervals = floatArrayOf(5f, 5f)
-                    )
-                )
-            } else {
-                drawLine(
-                    color = color,
-                    start = Offset.Zero,
-                    end = Offset(size.width, 0f),
-                    strokeWidth = 3f
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                letterSpacing = 0.5.sp
-            ),
-            color = color
-        )
-    }
-}
-
-@Composable
-fun FadersView(
-    bands: List<EqBand>,
-    autoEqEnabled: Boolean,
-    onBandValueChange: (Int, Float) -> Unit
+fun RetroMixerView(
+    currentBands: List<EqBand>,
+    originalMastering: List<EqBand>,
+    onBandChange: (Int, Float) -> Unit
 ) {
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(PhantomDarkPurple, PhantomBlack)
-                )
-            )
-            .border(2.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-            .padding(16.dp)
+            .weight(1f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(RetroBlack)
+            .border(3.dp, RetroOrange, RoundedCornerShape(8.dp))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            bands.forEachIndexed { index, band ->
-                EqFader(
-                    frequency = band.frequency,
-                    value = band.value,
-                    autoEqEnabled = autoEqEnabled,
-                    onValueChange = { value ->
-                        if (!autoEqEnabled) {
-                            onBandValueChange(index, value)
-                        }
-                    }
-                )
-            }
+        currentBands.forEachIndexed { index, band ->
+            RetroFader(
+                frequency = band.frequency,
+                value = band.value,
+                ghostValue = originalMastering.getOrNull(index)?.value ?: 0f,
+                onValueChange = { newValue ->
+                    onBandChange(index, newValue)
+                }
+            )
         }
     }
 }
 
 @Composable
-fun EqFader(
+fun RetroFader(
     frequency: Int,
     value: Float,
-    autoEqEnabled: Boolean,
+    ghostValue: Float,
     onValueChange: (Float) -> Unit
 ) {
+    var isDragging by remember { mutableStateOf(false) }
+    
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(32.dp)
+        modifier = Modifier
+            .width(32.dp)
+            .fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Value Display
+        // dB value display
         Text(
-            text = String.format("%+.1f", value),
+            text = String.format("%+.0f", value),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold
             ),
-            color = PhantomPurple,
-            modifier = Modifier.height(20.dp)
+            color = if (isDragging) RetroGlow else RetroGreen,
+            textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
-        // Fader Channel
+        // Fader track
         Box(
             modifier = Modifier
-                .width(28.dp)
-                .height(200.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(PhantomBlack)
-                .border(1.dp, PhantomPurple.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+                .width(32.dp)
+                .weight(1f)
         ) {
-            // Center line (0dB)
+            // Track background
+            Box(
+                modifier = Modifier
+                    .width(8.dp)
+                    .fillMaxHeight()
+                    .align(Alignment.Center)
+                    .background(RetroGray)
+                    .border(1.dp, Color.Gray)
+            )
+            
+            // Ghost fader position (original mastering)
+            val ghostNormalized = (ghostValue + 12f) / 24f
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(2.dp)
+                    .height(4.dp)
                     .align(Alignment.Center)
-                    .background(PhantomPurple.copy(alpha = 0.5f))
+                    .offset(y = (-ghostNormalized * 100).dp)
+                    .background(RetroGray.copy(alpha = 0.5f))
+                    .border(1.dp, Color.DarkGray)
             )
             
-            // Fill indicator
-            val normalizedValue = (value + 12f) / 24f
-            val fillHeight = normalizedValue.coerceIn(0f, 1f)
+            // Current fader position
+            val normalized = (value + 12f) / 24f
             
-            if (fillHeight > 0.5f) {
-                // Above center - fill from center up
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val maxHeightPx = constraints.maxHeight.toFloat()
+                
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .fillMaxHeight((fillHeight - 0.5f) * 2f)
-                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .align(Alignment.Center)
+                        .offset(y = (-(normalized - 0.5f) * maxHeightPx / density).dp)
                         .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    PhantomPurple.copy(alpha = 0.3f),
-                                    Color.Transparent
-                                )
-                            )
+                            if (isDragging) RetroGlow else RetroOrange,
+                            RoundedCornerShape(2.dp)
                         )
-                )
-            } else {
-                // Below center - fill from center down
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .fillMaxHeight((0.5f - fillHeight) * 2f)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.Transparent,
-                                    PhantomOrange.copy(alpha = 0.3f)
-                                )
-                            )
-                        )
-                )
-            }
-            
-            // Fader Knob
-            Box(
-                modifier = Modifier
-                    .width(24.dp)
-                    .height(40.dp)
-                    .align(Alignment.TopCenter)
-                    .offset(y = ((1f - normalizedValue) * 160).dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                PhantomPurple.copy(alpha = 0.5f),
-                                PhantomPurple.copy(alpha = 0.5f)
-                            )
-                        )
-                    )
-                    .border(1.dp, PhantomPurple, RoundedCornerShape(4.dp))
-                    .pointerInput(Unit) {
-                        if (!autoEqEnabled) {
-                            detectDragGestures { change, dragAmount ->
-                                val newValue = value - (dragAmount.y / 10f)
-                                onValueChange(newValue.coerceIn(-12f, 12f))
+                        .border(2.dp, if (isDragging) Color.White else RetroAmber, RoundedCornerShape(2.dp))
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { isDragging = true },
+                                onDragEnd = { isDragging = false }
+                            ) { change, dragAmount ->
+                                change.consume()
+                                val delta = -(dragAmount.y / maxHeightPx) * 24f
+                                val newValue = (value + delta).coerceIn(-12f, 12f)
+                                onValueChange(newValue)
                             }
                         }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(3.dp)
-                        .background(PhantomPurple)
                 )
             }
         }
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Frequency Label
+        // Frequency label
         Text(
-            text = formatFrequency(frequency),
+            text = when {
+                frequency >= 1000 -> "${frequency / 1000}k"
+                else -> "$frequency"
+            },
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
+                fontWeight = FontWeight.Bold
             ),
-            color = PhantomPurple
+            color = RetroAmber,
+            textAlign = TextAlign.Center
         )
-    }
-}
-
-@Composable
-fun EqPresetPanel(viewModel: EqViewModel) {
-    val presets = listOf("BASS BOOST", "VOCAL", "TREBLE", "FLAT", "ROCK", "POP")
-    
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(PhantomDarkPurple)
-            .border(1.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(
-                "PRESETS",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = PhantomPurple,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                presets.take(3).forEach { preset ->
-                    PresetButton(
-                        label = preset,
-                        onClick = { },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                presets.drop(3).forEach { preset ->
-                    PresetButton(
-                        label = preset,
-                        onClick = { },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PresetButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(
-                        PhantomDarkPurple.copy(alpha = 0.5f),
-                        PhantomDarkPurple.copy(alpha = 0.3f)
-                    )
-                )
-            )
-            .border(1.dp, PhantomPurple.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            ),
-            color = PhantomWhite
-        )
-    }
-}
-
-@Composable
-fun InitializingEqState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(350.dp)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(
-                color = PhantomPurple,
-                strokeWidth = 3.dp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "INITIALIZING EQUALIZER...",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = PhantomPurple.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
-
-private fun formatFrequency(frequency: Int): String {
-    return if (frequency >= 1000) {
-        "${frequency / 1000}k"
-    } else {
-        "$frequency"
     }
 }
