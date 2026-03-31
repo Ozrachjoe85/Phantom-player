@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -320,7 +321,7 @@ fun RetroCurveView(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1f)
+            .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFF0A0A0A))
             .border(3.dp, RetroGreen, RoundedCornerShape(8.dp))
@@ -422,27 +423,6 @@ fun RetroCurveView(
                     radius = 6f,
                     center = Offset(x, y)
                 )
-                
-                // Frequency label
-                drawContext.canvas.nativeCanvas.apply {
-                    val paint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.rgb(255, 176, 0)
-                        textSize = 28f
-                        textAlign = android.graphics.Paint.Align.CENTER
-                    }
-                    drawText("${band.frequency}", x, height - 10f, paint)
-                }
-                
-                // dB value label
-                drawContext.canvas.nativeCanvas.apply {
-                    val paint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.rgb(0, 255, 136)
-                        textSize = 32f
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isFakeBoldText = true
-                    }
-                    drawText(String.format("%+.1f", band.value), x, y - 20f, paint)
-                }
             }
         }
     }
@@ -457,7 +437,7 @@ fun RetroMixerView(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1f)
+            .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
             .background(RetroBlack)
             .border(3.dp, RetroOrange, RoundedCornerShape(8.dp))
@@ -539,13 +519,14 @@ fun RetroFader(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val maxHeightPx = constraints.maxHeight.toFloat()
+                val density = LocalDensity.current
                 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(12.dp)
                         .align(Alignment.Center)
-                        .offset(y = (-(normalized - 0.5f) * maxHeightPx / density).dp)
+                        .offset(y = (-(normalized - 0.5f) * maxHeightPx / density.density).dp)
                         .background(
                             if (isDragging) RetroGlow else RetroOrange,
                             RoundedCornerShape(2.dp)
