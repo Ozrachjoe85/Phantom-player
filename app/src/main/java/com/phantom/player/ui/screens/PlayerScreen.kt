@@ -491,7 +491,7 @@ fun ProgressBarWithSeek(
             // Seek thumb
             if (isDragging || progress > 0f) {
                 val thumbProgress = if (isDragging) dragProgress else progress
-                val thumbOffset = thumbProgress * boxWidth - 10.dp
+                val thumbOffset = (boxWidth.value * thumbProgress - 10f).dp
                 Box(
                     modifier = Modifier
                         .offset(x = thumbOffset.coerceAtLeast(0.dp))
