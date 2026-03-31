@@ -24,7 +24,15 @@ import javax.inject.Singleton
 class AudioEngine @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val _player = ExoPlayer.Builder(context).build()
+    private val _player = ExoPlayer.Builder(context)
+        .setAudioAttributes(
+            androidx.media3.common.AudioAttributes.Builder()
+                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
+                .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                .build(),
+            true
+        )
+        .build()
     val player: ExoPlayer = _player
 
     private val _isPlaying = MutableStateFlow(false)
