@@ -137,79 +137,69 @@ class EqViewModel @Inject constructor(
      * - Upper-mids: Boosted for vocal detail and definition
      * - Highs: Boosted for air, sparkle, and brilliance
      * 
-     * Values are in millibels (1000 millibels = 1 dB)
-     * Range: -1500 to +1500 (typical), -1200 to +1200 (safe)
+     * Values are in dB (decibels)
+     * Range: -12.0 to +12.0 (typical)
      */
     private fun calculateAutoEQ(): List<EqBand> {
         return listOf(
             // SUB-BASS: Massive thump (31Hz) - +8dB
             EqBand(
-                bandIndex = 0,
-                frequency = 31f,
-                gain = 800  // +8dB for deep sub-bass impact
+                frequency = 31,
+                value = 8.0f  // +8dB for deep sub-bass impact
             ),
             
             // BASS: Powerful punch (63Hz) - +7dB
             EqBand(
-                bandIndex = 1,
-                frequency = 63f,
-                gain = 700  // +7dB for bass punch and power
+                frequency = 63,
+                value = 7.0f  // +7dB for bass punch and power
             ),
             
             // LOW-BASS: Warm foundation (125Hz) - +6dB
             EqBand(
-                bandIndex = 2,
-                frequency = 125f,
-                gain = 600  // +6dB for bass warmth and fullness
+                frequency = 125,
+                value = 6.0f  // +6dB for bass warmth and fullness
             ),
             
             // LOW-MIDS: Body and warmth (250Hz) - +3dB
             EqBand(
-                bandIndex = 3,
-                frequency = 250f,
-                gain = 300  // +3dB for lower mid body
+                frequency = 250,
+                value = 3.0f  // +3dB for lower mid body
             ),
             
             // MIDS: Vocal foundation (500Hz) - +3dB
             EqBand(
-                bandIndex = 4,
-                frequency = 500f,
-                gain = 300  // +3dB for vocal presence
+                frequency = 500,
+                value = 3.0f  // +3dB for vocal presence
             ),
             
             // UPPER-MIDS: Vocal clarity (1kHz) - +4dB
             EqBand(
-                bandIndex = 5,
-                frequency = 1000f,
-                gain = 400  // +4dB for vocal clarity and cut-through
+                frequency = 1000,
+                value = 4.0f  // +4dB for vocal clarity and cut-through
             ),
             
             // HIGH-MIDS: Vocal definition (2kHz) - +4dB
             EqBand(
-                bandIndex = 6,
-                frequency = 2000f,
-                gain = 400  // +4dB for vocal detail and articulation
+                frequency = 2000,
+                value = 4.0f  // +4dB for vocal detail and articulation
             ),
             
             // PRESENCE: Bite and attack (4kHz) - +5dB
             EqBand(
-                bandIndex = 7,
-                frequency = 4000f,
-                gain = 500  // +5dB for presence and attack
+                frequency = 4000,
+                value = 5.0f  // +5dB for presence and attack
             ),
             
             // HIGH-FREQ: Air and sparkle (8kHz) - +4dB
             EqBand(
-                bandIndex = 8,
-                frequency = 8000f,
-                gain = 400  // +4dB for air and definition
+                frequency = 8000,
+                value = 4.0f  // +4dB for air and definition
             ),
             
             // ULTRA-HIGH: Brilliance and shimmer (16kHz) - +3dB
             EqBand(
-                bandIndex = 9,
-                frequency = 16000f,
-                gain = 300  // +3dB for top-end brilliance
+                frequency = 16000,
+                value = 3.0f  // +3dB for top-end brilliance
             )
         )
     }
