@@ -83,7 +83,7 @@ class EqViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Check if custom profile exists
-                val profile = songEqProfileDao.getProfile(songId)
+                val profile = songEqProfileDao.getProfileById(songId)
                 
                 if (profile != null) {
                     // Load custom profile
@@ -157,7 +157,7 @@ class EqViewModel @Inject constructor(
                     bands = Json.encodeToString(_currentBands.value),
                     updatedAt = System.currentTimeMillis()
                 )
-                songEqProfileDao.insert(profile)
+                songEqProfileDao.upsert(profile)
             } catch (e: Exception) {
                 // Handle error
             }
@@ -426,16 +426,6 @@ class EqViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Software mode
             }
-        }
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        // Release resources
-        try {
-            eqRepository.release()
-        } catch (e: Exception) {
-            // Already released
         }
     }
 }
