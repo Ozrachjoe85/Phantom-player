@@ -95,27 +95,19 @@
         android:strokeLineCap="round"/>
     
     <!-- Orbiting particles (static in icon, animated in app) -->
-    <circle
-        android:cx="35"
-        android:cy="45"
-        android:radius="2"
+    <path
+        android:pathData="M35,45m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"
         android:fillColor="#00D9FF"/>
     
-    <circle
-        android:cx="73"
-        android:cy="65"
-        android:radius="2"
+    <path
+        android:pathData="M73,65m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"
         android:fillColor="#FFB000"/>
     
-    <circle
-        android:cx="45"
-        android:cy="75"
-        android:radius="1.5"
+    <path
+        android:pathData="M45,75m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"
         android:fillColor="#9D4EDD"/>
     
-    <circle
-        android:cx="63"
-        android:cy="35"
-        android:radius="1.5"
+    <path
+        android:pathData="M63,35m-1.5,0a1.5,1.5 0,1 1,3 0a1.5,1.5 0,1 1,-3 0"
         android:fillColor="#FF6B35"/>
 </vector>
