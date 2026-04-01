@@ -554,8 +554,8 @@ fun CyberpunkFader(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Fader track
-        Box(
+        // Fader track with BoxWithConstraints
+        BoxWithConstraints(
             modifier = Modifier
                 .width(8.dp)
                 .weight(1f)
@@ -570,13 +570,15 @@ fun CyberpunkFader(
                     }
                 }
         ) {
+            val maxHeight = this.maxHeight
+            
             // Ghost position indicator (0dB line)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp)
                     .align(Alignment.TopStart)
-                    .offset(y = ((1f - ghostNormalized) * this@Box.constraints.maxHeight / density.density).dp)
+                    .offset(y = ((1f - ghostNormalized) * maxHeight.value).dp)
                     .background(GhostGray.copy(alpha = 0.6f))
             )
             
@@ -586,7 +588,7 @@ fun CyberpunkFader(
                     .fillMaxWidth()
                     .height(24.dp)
                     .align(Alignment.TopStart)
-                    .offset(y = ((1f - normalized) * (this@Box.constraints.maxHeight - 24.dp.toPx()) / density.density).dp)
+                    .offset(y = ((1f - normalized) * (maxHeight.value - 24f)).dp)
             ) {
                 // Knob glow
                 Box(
