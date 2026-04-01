@@ -67,27 +67,23 @@
         android:pathData="M10,10L20,10L20,20"
         android:strokeWidth="1"
         android:strokeColor="#00FF88"
-        android:strokeAlpha="0.3"
-        android:fillColor="none"/>
+        android:strokeAlpha="0.3"/>
     
     <path
         android:pathData="M98,10L88,10L88,20"
         android:strokeWidth="1"
         android:strokeColor="#00FF88"
-        android:strokeAlpha="0.3"
-        android:fillColor="none"/>
+        android:strokeAlpha="0.3"/>
     
     <path
         android:pathData="M10,98L20,98L20,88"
         android:strokeWidth="1"
         android:strokeColor="#00FF88"
-        android:strokeAlpha="0.3"
-        android:fillColor="none"/>
+        android:strokeAlpha="0.3"/>
     
     <path
         android:pathData="M98,98L88,98L88,88"
         android:strokeWidth="1"
         android:strokeColor="#00FF88"
-        android:strokeAlpha="0.3"
-        android:fillColor="none"/>
+        android:strokeAlpha="0.3"/>
 </vector>
