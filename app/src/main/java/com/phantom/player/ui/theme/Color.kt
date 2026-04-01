@@ -41,3 +41,9 @@ val SuccessGreen = Color(0xFF00FF88)       // Success state
 val WarningAmber = Color(0xFFFFB000)       // Warning state
 val ErrorRed = Color(0xFFFF1744)           // Error state
 val InfoBlue = Color(0xFF00D9FF)           // Info state
+
+// Legacy color names (for compatibility with PhantomApp.kt and SettingsScreen.kt)
+val ElectricBlue = Color(0xFF00D9FF)       // Same as PhantomBlue/CyberBlue
+val HoloCyan = Color(0xFF00FF88)           // Same as CyberGreen
+val MetallicSilver = Color(0xFFB3B3B3)     // Same as TextSecondary
+val ChromeLight = Color(0xFF666666)        // Same as TextDisabled
