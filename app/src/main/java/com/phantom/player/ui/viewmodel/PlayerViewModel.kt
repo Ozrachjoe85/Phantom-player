@@ -81,7 +81,8 @@ class PlayerViewModel @Inject constructor(
     fun toggleFavorite(songId: String, isFavorite: Boolean) {
         viewModelScope.launch {
             try {
-                musicRepository.updateFavoriteStatus(songId, isFavorite)
+                // TODO: Implement when MusicRepository has updateFavoriteStatus method
+                // musicRepository.updateFavoriteStatus(songId, isFavorite)
             } catch (e: Exception) {
                 // Handle error
             }
