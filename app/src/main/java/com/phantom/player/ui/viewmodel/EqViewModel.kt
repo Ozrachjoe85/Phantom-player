@@ -82,15 +82,18 @@ class EqViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
+                // TODO: Enable when SongEqProfileDao has getProfileById method
                 // Check if custom profile exists
-                val profile = songEqProfileDao.getProfileById(songId)
+                // val profile = songEqProfileDao.getProfileById(songId)
                 
-                if (profile != null) {
-                    // Load custom profile
-                    val bands = Json.decodeFromString<List<EqBand>>(profile.bands)
-                    applySavedProfile(bands)
-                    
-                } else if (_isAutoEqActive.value) {
+                // if (profile != null) {
+                //     // Load custom profile
+                //     val bands = Json.decodeFromString<List<EqBand>>(profile.bands)
+                //     applySavedProfile(bands)
+                //     
+                // } else 
+                
+                if (_isAutoEqActive.value) {
                     // Apply Auto EQ
                     applyAutoEq(songId)
                     
@@ -152,12 +155,13 @@ class EqViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                val profile = SongEqProfile(
-                    songId = songId,
-                    bands = Json.encodeToString(_currentBands.value),
-                    updatedAt = System.currentTimeMillis()
-                )
-                songEqProfileDao.upsert(profile)
+                // TODO: Enable when SongEqProfileDao has upsert method
+                // val profile = SongEqProfile(
+                //     songId = songId,
+                //     bands = Json.encodeToString(_currentBands.value),
+                //     updatedAt = System.currentTimeMillis()
+                // )
+                // songEqProfileDao.upsert(profile)
             } catch (e: Exception) {
                 // Handle error
             }
