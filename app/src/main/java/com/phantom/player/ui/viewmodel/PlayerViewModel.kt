@@ -2,7 +2,10 @@ package com.phantom.player.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phantom.player.data.local.database.entities.Song
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import com.phantom.player.data.model.Song
 import com.phantom.player.data.repository.MusicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,79 +16,87 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val musicRepository: MusicRepository
+    private val musicRepository: MusicRepository,
+    private val player: ExoPlayer
 ) : ViewModel() {
     
-    // Current song being played
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
     
-    // Playback state
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     
-    // Current position in milliseconds
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
     
-    // Song duration in milliseconds
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration.asStateFlow()
     
-    /**
-     * Play a specific song
-     */
-    fun playSong(song: Song) {
-        _currentSong.value = song
-        _isPlaying.value = true
-        _currentPosition.value = 0L
-        _duration.value = song.duration
+    init {
+        // Listen to player state changes
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(playing: Boolean) {
+                _isPlaying.value = playing
+            }
+            
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_READY) {
+                    _duration.value = player.duration
+                }
+            }
+        })
         
-        // TODO: Integrate with EqViewModel when ready
-        // eqViewModel.setCurrentSong(song.id)
-    }
-    
-    /**
-     * Toggle play/pause
-     */
-    fun togglePlayPause() {
-        _isPlaying.value = !_isPlaying.value
-    }
-    
-    /**
-     * Skip to next song
-     */
-    fun skipToNext() {
-        // TODO: Implement playlist logic
-        _currentPosition.value = 0L
-    }
-    
-    /**
-     * Skip to previous song
-     */
-    fun skipToPrevious() {
-        // TODO: Implement playlist logic
-        _currentPosition.value = 0L
-    }
-    
-    /**
-     * Seek to specific position
-     */
-    fun seekTo(position: Long) {
-        _currentPosition.value = position
-    }
-    
-    /**
-     * Toggle favorite status
-     */
-    fun toggleFavorite(songId: String, isFavorite: Boolean) {
+        // Update position every second
         viewModelScope.launch {
-            try {
-                // TODO: Implement when MusicRepository has updateFavoriteStatus method
-                // musicRepository.updateFavoriteStatus(songId, isFavorite)
-            } catch (e: Exception) {
-                // Handle error
+            while (true) {
+                if (player.isPlaying) {
+                    _currentPosition.value = player.currentPosition
+                }
+                kotlinx.coroutines.delay(1000)
             }
         }
+    }
+    
+    fun playSong(song: Song) {
+        _currentSong.value = song
+        
+        val mediaItem = MediaItem.Builder()
+            .setUri(song.data)
+            .setMediaId(song.id)
+            .build()
+        
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+    
+    fun togglePlayPause() {
+        if (player.isPlaying) {
+            player.pause()
+        } else {
+            player.play()
+        }
+    }
+    
+    fun skipToNext() {
+        // TODO: Implement queue/playlist
+        player.seekToNext()
+    }
+    
+    fun skipToPrevious() {
+        if (player.currentPosition > 3000) {
+            player.seekTo(0)
+        } else {
+            player.seekToPrevious()
+        }
+    }
+    
+    fun seekTo(position: Long) {
+        player.seekTo(position)
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        player.release()
     }
 }
