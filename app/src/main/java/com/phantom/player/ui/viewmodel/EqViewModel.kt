@@ -2,22 +2,18 @@ package com.phantom.player.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.phantom.player.data.database.SongEqProfileDao
 import com.phantom.player.data.model.EqBand
 import com.phantom.player.data.repository.EqRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class EqViewModel @Inject constructor(
-    private val eqRepository: EqRepository,
-    private val songEqProfileDao: SongEqProfileDao
+    private val eqRepository: EqRepository
 ) : ViewModel() {
     
     // Standard 10-band frequencies (Hz)
