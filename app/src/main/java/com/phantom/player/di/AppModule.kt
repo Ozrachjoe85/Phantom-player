@@ -1,9 +1,7 @@
 package com.phantom.player.di
 
 import android.content.Context
-import com.phantom.player.data.local.MediaScanner
-import com.phantom.player.domain.audio.AudioEngine
-import com.phantom.player.domain.audio.EqualizerProcessor
+import androidx.media3.exoplayer.ExoPlayer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,9 +15,20 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideMediaScanner(
+    fun provideExoPlayer(
         @ApplicationContext context: Context
-    ): MediaScanner {
-        return MediaScanner(context)
+    ): ExoPlayer {
+        return ExoPlayer.Builder(context)
+            .build()
+            .apply {
+                // Enable audio offload for better battery life
+                setAudioAttributes(
+                    androidx.media3.common.AudioAttributes.Builder()
+                        .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
+                        .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                        .build(),
+                    true
+                )
+            }
     }
 }
