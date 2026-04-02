@@ -1,65 +1,109 @@
 package com.phantom.player.data.repository
 
-import com.phantom.player.data.local.database.dao.EqPresetDao
-import com.phantom.player.data.local.database.entities.EqBand
-import com.phantom.player.data.local.database.entities.EqPreset
-import com.phantom.player.domain.audio.EqualizerProcessor
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
+import androidx.media3.common.audio.AudioProcessor
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.AudioSink
+import com.phantom.player.data.model.EqBand
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.pow
 
 @Singleton
 class EqRepository @Inject constructor(
-    private val eqPresetDao: EqPresetDao,
-    private val equalizerProcessor: EqualizerProcessor
+    private val player: ExoPlayer
 ) {
-    val bands: StateFlow<List<EqBand>> = equalizerProcessor.bands
-    val isEnabled: StateFlow<Boolean> = equalizerProcessor.isEnabled
     
-    fun initialize(audioSessionId: Int) {
-        equalizerProcessor.initialize(audioSessionId)
+    // Standard 10-band EQ frequencies
+    val frequencies = listOf(32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
+    
+    // Current EQ settings (in dB)
+    private val currentGains = mutableMapOf<Int, Float>().apply {
+        frequencies.forEach { freq -> put(freq, 0f) }
     }
     
-    fun setBandValue(bandIndex: Int, value: Float) {
-        equalizerProcessor.setBandValue(bandIndex, value)
+    /**
+     * Apply EQ bands to the audio output
+     */
+    fun applyEq(bands: List<EqBand>) {
+        bands.forEach { band ->
+            currentGains[band.frequency] = band.value
+        }
+        
+        // Apply to ExoPlayer
+        // Note: ExoPlayer doesn't have built-in EQ, so we'll need to use Android's Equalizer
+        applyToSystemEqualizer()
     }
     
-    fun loadPreset(bands: List<EqBand>) {
-        equalizerProcessor.loadPreset(bands)
+    /**
+     * Reset all bands to 0dB (flat)
+     */
+    fun resetEq() {
+        frequencies.forEach { freq ->
+            currentGains[freq] = 0f
+        }
+        applyToSystemEqualizer()
     }
     
-    fun resetAllBands() {
-        equalizerProcessor.resetAllBands()
+    /**
+     * Get current EQ bands
+     */
+    fun getCurrentBands(): List<EqBand> {
+        return frequencies.map { freq ->
+            EqBand(
+                frequency = freq,
+                value = currentGains[freq] ?: 0f,
+                q = 1.0f
+            )
+        }
     }
     
-    fun setEnabled(enabled: Boolean) {
-        equalizerProcessor.setEnabled(enabled)
+    /**
+     * Apply EQ using Android's system Equalizer
+     * This requires audio session ID from the player
+     */
+    private fun applyToSystemEqualizer() {
+        try {
+            val audioSessionId = player.audioSessionId
+            
+            if (audioSessionId != 0) {
+                // Create or get existing equalizer for this session
+                val equalizer = android.media.audiofx.Equalizer(0, audioSessionId)
+                equalizer.enabled = true
+                
+                // Map our frequencies to the closest available bands
+                val numBands = equalizer.numberOfBands.toInt()
+                
+                frequencies.forEach { targetFreq ->
+                    val gain = currentGains[targetFreq] ?: 0f
+                    
+                    // Find closest band to our target frequency
+                    var closestBand = 0
+                    var closestDiff = Int.MAX_VALUE
+                    
+                    for (band in 0 until numBands) {
+                        val bandFreq = equalizer.getCenterFreq(band.toShort()) / 1000 // Convert mHz to Hz
+                        val diff = kotlin.math.abs(bandFreq - targetFreq)
+                        if (diff < closestDiff) {
+                            closestDiff = diff
+                            closestBand = band
+                        }
+                    }
+                    
+                    // Convert dB to millibels (Android uses millibels)
+                    val gainInMillibels = (gain * 100).toInt().toShort()
+                    
+                    // Clamp to valid range
+                    val minGain = equalizer.bandLevelRange[0]
+                    val maxGain = equalizer.bandLevelRange[1]
+                    val clampedGain = gainInMillibels.coerceIn(minGain, maxGain)
+                    
+                    equalizer.setBandLevel(closestBand.toShort(), clampedGain)
+                }
+            }
+        } catch (e: Exception) {
+            // Equalizer not available on this device
+            e.printStackTrace()
+        }
     }
-    
-    fun getPresetNames(): List<String> {
-        return equalizerProcessor.getPresetNames()
-    }
-    
-    fun useBuiltInPreset(presetIndex: Int) {
-        equalizerProcessor.useBuiltInPreset(presetIndex)
-    }
-    
-    // Database operations
-    fun getAllPresets(): Flow<List<EqPreset>> = eqPresetDao.getAllPresets()
-    
-    suspend fun getPresetById(presetId: Long): EqPreset? = 
-        eqPresetDao.getPresetById(presetId)
-    
-    suspend fun savePreset(name: String, bands: List<EqBand>): Long {
-        val bandsJson = bands.toString() // Simple string representation for now
-        val preset = EqPreset(name = name, bands = bandsJson, isCustom = true)
-        return eqPresetDao.insertPreset(preset)
-    }
-    
-    suspend fun updatePreset(preset: EqPreset) = eqPresetDao.updatePreset(preset)
-    
-    suspend fun deletePreset(preset: EqPreset) = eqPresetDao.deletePreset(preset)
-    
-    suspend fun deleteCustomPresets() = eqPresetDao.deleteCustomPresets()
 }
