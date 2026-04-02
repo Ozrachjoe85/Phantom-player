@@ -23,11 +23,14 @@ fun EqScreen(
             TopAppBar(
                 title = { Text("Equalizer") },
                 actions = {
-                    Switch(
-                        checked = isAutoEqActive,
-                        onCheckedChange = { viewModel.toggleAutoEq() }
-                    )
-                    Text("Auto EQ")
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("Auto EQ")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = isAutoEqActive,
+                            onCheckedChange = { viewModel.toggleAutoEq() }
+                        )
+                    }
                 }
             )
         }
