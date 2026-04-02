@@ -1,62 +1,83 @@
 package com.phantom.player.data.repository
 
-import com.phantom.player.data.local.MediaScanner
-import com.phantom.player.data.local.database.dao.SongDao
-import com.phantom.player.data.local.database.entities.Song
+import android.content.ContentUris
+import android.content.Context
+import android.provider.MediaStore
+import com.phantom.player.data.model.Song
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MusicRepository @Inject constructor(
-    private val songDao: SongDao,
-    private val mediaScanner: MediaScanner
+    @ApplicationContext private val context: Context
 ) {
-    fun getAllSongs(): Flow<List<Song>> = songDao.getAllSongs()
     
-    fun getSongsByArtist(artist: String): Flow<List<Song>> = 
-        songDao.getSongsByArtist(artist)
-    
-    fun getSongsByAlbum(album: String): Flow<List<Song>> = 
-        songDao.getSongsByAlbum(album)
-    
-    fun getFavoriteSongs(): Flow<List<Song>> = songDao.getFavoriteSongs()
-    
-    fun getRecentlyAdded(limit: Int = 20): Flow<List<Song>> = 
-        songDao.getRecentlyAdded(limit)
-    
-    fun getMostPlayed(limit: Int = 20): Flow<List<Song>> = 
-        songDao.getMostPlayed(limit)
-    
-    fun getAllArtists(): Flow<List<String>> = songDao.getAllArtists()
-    
-    fun getAllAlbums(): Flow<List<String>> = songDao.getAllAlbums()
-    
-    fun getAllGenres(): Flow<List<String>> = songDao.getAllGenres()
-    
-    fun searchSongs(query: String): Flow<List<Song>> = songDao.searchSongs(query)
-    
-    suspend fun getSongById(songId: String): Song? = songDao.getSongById(songId)
-    
-    suspend fun scanAndImportMusic(): Result<Int> {
-        return try {
-            val songs = mediaScanner.scanLocalMusic()
-            songDao.insertSongs(songs)
-            Result.success(songs.size)
-        } catch (e: Exception) {
-            Result.failure(e)
+    /**
+     * Scan device for music files using MediaStore
+     */
+    fun getAllSongs(): Flow<List<Song>> = flow {
+        val songs = mutableListOf<Song>()
+        
+        val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.ALBUM_ID
+        )
+        
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
+        
+        context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            null,
+            sortOrder
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+            
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val title = cursor.getString(titleColumn) ?: "Unknown"
+                val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
+                val album = cursor.getString(albumColumn) ?: "Unknown Album"
+                val data = cursor.getString(dataColumn)
+                val duration = cursor.getLong(durationColumn)
+                val albumId = cursor.getLong(albumIdColumn)
+                
+                // Get album art URI
+                val albumArtUri = ContentUris.withAppendedId(
+                    android.net.Uri.parse("content://media/external/audio/albumart"),
+                    albumId
+                ).toString()
+                
+                songs.add(
+                    Song(
+                        id = id.toString(),
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        data = data,
+                        duration = duration,
+                        albumArt = albumArtUri
+                    )
+                )
+            }
         }
+        
+        emit(songs)
     }
-    
-    suspend fun updateSong(song: Song) = songDao.updateSong(song)
-    
-    suspend fun incrementPlayCount(songId: String) = 
-        songDao.incrementPlayCount(songId)
-    
-    suspend fun toggleFavorite(songId: String, isFavorite: Boolean) = 
-        songDao.updateFavorite(songId, isFavorite)
-    
-    suspend fun deleteSong(song: Song) = songDao.deleteSong(song)
-    
-    suspend fun deleteAllSongs() = songDao.deleteAllSongs()
 }
