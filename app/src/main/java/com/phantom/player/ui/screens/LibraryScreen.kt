@@ -11,34 +11,58 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.phantom.player.ui.viewmodel.LibraryViewModel
+import com.phantom.player.ui.viewmodel.PlayerViewModel
+import com.phantom.player.ui.viewmodel.EqViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    viewModel: LibraryViewModel = hiltViewModel()
+    navController: NavHostController,
+    libraryViewModel: LibraryViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    eqViewModel: EqViewModel = hiltViewModel()
 ) {
-    val songs by viewModel.songs.collectAsState()
+    val songs by libraryViewModel.songs.collectAsState()
     
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Library") })
+            TopAppBar(title = { Text("Library (${songs.size} songs)") })
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            items(songs) { song ->
-                ListItem(
-                    headlineContent = { Text(song.title) },
-                    supportingContent = { Text(song.artist) },
-                    modifier = Modifier.clickable {
-                        // TODO: Play song
-                    }
-                )
-                HorizontalDivider()
+        if (songs.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text("No music found. Add music to your device.")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                items(songs) { song ->
+                    ListItem(
+                        headlineContent = { Text(song.title) },
+                        supportingContent = { Text(song.artist) },
+                        modifier = Modifier.clickable {
+                            // Play the song
+                            playerViewModel.playSong(song)
+                            
+                            // Update EQ for this song
+                            eqViewModel.setCurrentSong(song.id)
+                            
+                            // Navigate to player
+                            navController.navigate("player")
+                        }
+                    )
+                    HorizontalDivider()
+                }
             }
         }
     }
