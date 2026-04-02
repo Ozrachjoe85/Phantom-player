@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,11 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.phantom.player.ui.screens.*
 import com.phantom.player.ui.theme.*
-import com.phantom.player.ui.viewmodel.*
 
-/**
- * Phantom Player - Main App Composable with Bottom Navigation
- */
 @Composable
 fun PhantomApp() {
     val navController = rememberNavController()
@@ -43,9 +38,6 @@ fun PhantomApp() {
     }
 }
 
-/**
- * Bottom Navigation Bar - Cyberpunk Themed
- */
 @Composable
 fun PhantomBottomNavigation(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -107,42 +99,22 @@ fun PhantomBottomNavigation(navController: NavHostController) {
     }
 }
 
-/**
- * Navigation Host - Routes to Screens
- */
 @Composable
 fun PhantomNavHost(navController: NavHostController) {
-    val libraryViewModel: LibraryViewModel = hiltViewModel()
-    val playerViewModel: PlayerViewModel = hiltViewModel()
-    val eqViewModel: EqViewModel = hiltViewModel()
-    
     NavHost(
         navController = navController,
         startDestination = BottomNavItem.Library.route
     ) {
         composable(BottomNavItem.Library.route) {
-            LibraryScreen(
-                viewModel = libraryViewModel,
-                onSongClick = { song ->
-                    playerViewModel.playSong(song)
-                    navController.navigate(BottomNavItem.Player.route)
-                }
-            )
+            LibraryScreen()
         }
         
         composable(BottomNavItem.Player.route) {
-            PlayerScreen(
-                viewModel = playerViewModel,
-                onNavigateToEQ = {
-                    navController.navigate(BottomNavItem.EQ.route)
-                }
-            )
+            PlayerScreen()
         }
         
         composable(BottomNavItem.EQ.route) {
-            EqScreen(
-                viewModel = eqViewModel
-            )
+            EqScreen()
         }
         
         composable(BottomNavItem.Settings.route) {
@@ -151,9 +123,6 @@ fun PhantomNavHost(navController: NavHostController) {
     }
 }
 
-/**
- * Bottom Navigation Items
- */
 sealed class BottomNavItem(
     val route: String,
     val icon: ImageVector,
