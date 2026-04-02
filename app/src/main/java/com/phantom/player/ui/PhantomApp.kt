@@ -28,7 +28,9 @@ fun PhantomApp() {
             startDestination = "library",
             modifier = Modifier.padding(padding)
         ) {
-            composable("library") { LibraryScreen() }
+            composable("library") { 
+                LibraryScreen(navController = navController)
+            }
             composable("player") { PlayerScreen() }
             composable("eq") { EqScreen() }
             composable("settings") { SettingsScreen() }
