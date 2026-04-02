@@ -61,7 +61,7 @@ fun LibraryScreen(
                             navController.navigate("player")
                         }
                     )
-                    HorizontalDivider()
+                    Divider()
                 }
             }
         }
